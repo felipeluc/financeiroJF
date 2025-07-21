@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema Financeiro</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-container" id="loginContainer">
+    <h2>Login</h2>
+    <select id="userSelect">
+      <option value="Felipe">Felipe</option>
+      <option value="João">João</option>
+    </select>
+    <input type="password" id="password" placeholder="Senha" />
+    <button onclick="login()">Entrar</button>
+    <p id="loginError" class="error-message"></p>
+  </div>
+
+  <div class="main-container" id="mainContainer" style="display:none;">
+    <h2 id="welcome"></h2>
+    <div class="tabs">
+      <button onclick="openTab('visaoGeral')">1. Visão Geral</button>
+      <button onclick="openTab('faturaCartao')">2. Fatura do Cartão</button>
+      <button onclick="openTab('salarioMes')">3. Salário do Mês</button>
+    </div>
+
+    <div id="visaoGeral" class="tab-content">
+      <h3>Visão Geral</h3>
+      <label>Salário:</label>
+      <input type="number" id="salario" />
+      <label>Já Gastou:</label>
+      <input type="number" id="jaGastou" disabled />
+      <label>Limite para Gastar:</label>
+      <input type="number" id="limite" />
+      <p><strong>Disponível:</strong> <span id="disponivel">R$ 0,00</span></p>
+
+      <h4>Adicionar Novo Gasto</h4>
+      <input type="text" id="descGasto" placeholder="Descrição" />
+      <input type="number" id="valorGasto" placeholder="Valor" />
+      <button onclick="adicionarGasto()">Adicionar</button>
+
+      <ul id="listaGastos"></ul>
+    </div>
+
+    <div id="faturaCartao" class="tab-content" style="display:none;">
+      <h3>Fatura do Cartão</h3>
+      <label>Valor total da fatura:</label>
+      <input type="number" id="valorFatura" />
+      <label>Outras pessoas usaram:</label>
+      <input type="number" id="usoOutros" />
+      <label>Ajuda 1:</label>
+      <input type="number" id="ajuda1" />
+      <label>Ajuda 2:</label>
+      <input type="number" id="ajuda2" />
+      <label>Ajuda 3:</label>
+      <input type="number" id="ajuda3" />
+      <label>Seu limite:</label>
+      <input type="number" id="limiteCartao" />
+      <button onclick="calcularCartao()">Calcular</button>
+
+      <p><strong>Total seu:</strong> <span id="totalSeu">R$ 0,00</span></p>
+      <p><strong>Disponível:</strong> <span id="disponivelCartao">R$ 0,00</span></p>
+    </div>
+
+    <div id="salarioMes" class="tab-content" style="display:none;">
+      <h3>Salário do Mês</h3>
+      <label>Salário Recebido:</label>
+      <input type="number" id="salarioRecebido" />
+      <h4>Custos Fixos</h4>
+      <input type="number" placeholder="Mercado" id="mercado" />
+      <input type="number" placeholder="Aluguel" id="aluguel" />
+      <input type="number" placeholder="Internet" id="internet" />
+      <input type="number" placeholder="Ração" id="racao" />
+      <input type="number" placeholder="Água" id="agua" />
+      <input type="number" placeholder="Luz" id="luz" />
+      <input type="number" placeholder="Outras despesas" id="despesas" />
+      <button onclick="calcularSobra()">Calcular</button>
+
+      <p><strong>Sobra:</strong> <span id="sobraMes">R$ 0,00</span></p>
+    </div>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
