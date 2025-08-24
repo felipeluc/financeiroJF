@@ -1,4 +1,4 @@
-// Firebase config
+// Firebase confi
 const firebaseConfig = {
   apiKey: "AIzaSyBFImw6Px0VKLiSVba8L-9PdjLPIU_HmSM",
   authDomain: "financeiro-409db.firebaseapp.com",
