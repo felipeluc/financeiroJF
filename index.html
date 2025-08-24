@@ -1,96 +1,30 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gestão Financeira</title>
-  <link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Gestor de Ideias</title>
+  <link rel="stylesheet" href="style.css" />
   <!-- Firebase SDK -->
-  <script type="module" src="app.js" defer></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS (Excel) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1 class="titulo">Gestão Financeira Pessoal</h1>
-
-    <!-- Abas -->
-    <div class="abas">
-      <button onclick="mostrarAba('dinheiro')" id="aba-dinheiro" class="aba ativa">Meu Dinheiro</button>
-      <button onclick="mostrarAba('cartao')" id="aba-cartao" class="aba">Meu Cartão</button>
-      <button onclick="mostrarAba('meses')" id="aba-meses" class="aba">Próximos Meses</button>
-    </div>
-
-    <!-- Área Principal -->
-    <div id="aba-dinheiro-content" class="aba-content ativa">
-      <h2>Salário e Gastos Fixos</h2>
-      <input type="number" id="salario" placeholder="Salário Mensal">
-      <input type="number" id="valorGuardar" placeholder="Quanto deseja guardar">
-
-      <h3>Contas Fixas</h3>
-      <div id="listaFixos"></div>
-      <input type="text" id="nomeFixo" placeholder="Nome da conta">
-      <input type="number" id="valorFixo" placeholder="Valor">
-      <button onclick="adicionarFixo()">Adicionar Fixo</button>
-
-      <h3>Gastos Variáveis</h3>
-      <div id="listaGastos"></div>
-      <input type="text" id="descGasto" placeholder="Descrição">
-      <input type="number" id="valorGasto" placeholder="Valor">
-      <select id="categoriaGasto">
-        <option value="Alimentação">Alimentação</option>
-        <option value="Transporte">Transporte</option>
-        <option value="Lazer">Lazer</option>
-        <option value="Outros">Outros</option>
-      </select>
-      <button onclick="adicionarGasto()">Adicionar Gasto</button>
-
-      <div class="acoes">
-        <button onclick="salvarFinanceiro()">Salvar Dados</button>
-        <button onclick="exportarPDF()">Exportar PDF</button>
-        <button onclick="exportarExcel()">Exportar Excel</button>
-      </div>
-
-      <canvas id="graficoResumo" style="max-width: 500px; margin-top: 20px;"></canvas>
-    </div>
-
-    <div id="aba-cartao-content" class="aba-content">
-      <h2>Controle do Cartão</h2>
-      <input type="number" id="limiteCartao" placeholder="Limite do Cartão">
-      <input type="number" id="valorCartao" placeholder="Valor Atual Usado">
-      <button onclick="salvarCartao()">Salvar Cartão</button>
-    </div>
-
-    <div id="aba-meses-content" class="aba-content">
-      <h2>Planejamento dos Próximos Meses</h2>
-      <textarea id="planejamento" rows="8" placeholder="Anote aqui seu planejamento futuro..."></textarea>
-      <button onclick="salvarPlanejamento()">Salvar Planejamento</button>
-    </div>
+    <header>
+      <h1>💡 Gestor de Ideias</h1>
+      <nav>
+        <button id="btn-ideia">Nova Ideia</button>
+        <button id="btn-acompanhar">Acompanhamento</button>
+      </nav>
+    </header>
+    <main id="main-content">
+      <!-- Conteúdo dinâmico será inserido aqui -->
+    </main>
+    <footer>
+      <span>Desenvolvido por Professional Dev AI</span>
+    </footer>
   </div>
-
-  <!-- Login Modal -->
-  <div id="loginModal" class="modal">
-    <div class="modal-content">
-      <h2>Login</h2>
-      <input type="email" id="email" placeholder="Email">
-      <input type="password" id="senha" placeholder="Senha">
-      <button onclick="login()">Entrar</button>
-      <p><a href="#" onclick="mostrarCadastro()">Criar conta</a> | <a href="#" onclick="recuperarSenha()">Esqueci a senha</a></p>
-    </div>
-  </div>
-
-  <!-- Cadastro Modal -->
-  <div id="cadastroModal" class="modal">
-    <div class="modal-content">
-      <h2>Criar Conta</h2>
-      <input type="email" id="novoEmail" placeholder="Email">
-      <input type="password" id="novaSenha" placeholder="Senha">
-      <button onclick="criarConta()">Cadastrar</button>
-      <p><a href="#" onclick="fecharCadastro()">Voltar</a></p>
-    </div>
-  </div>
+  <script src="app.js"></script>
 </body>
 </html>
