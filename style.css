@@ -1,158 +1,186 @@
-/* Reset e base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css?family=Inter:400,600&display=swap');
+
+:root {
+  --primary: #007aff;
+  --background: #f7f7fa;
+  --surface: #fff;
+  --border: #e0e0e0;
+  --radius: 16px;
+  --shadow: 0 6px 32px rgba(0,0,0,0.06), 0 1.5px 6px rgba(0,0,0,0.04);
 }
 
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
-  padding-bottom: 80px; /* espaço para o rodapé */
-}
-
-/* Container principal */
-.app-container {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-/* Título */
-.titulo {
-  text-align: center;
-  font-size: 1.8rem;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-/* Cartões */
-.card {
-  background-color: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-}
-
-/* Inputs */
-input,
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-/* Formulário inline */
-.form-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.form-inline input,
-.form-inline select {
-  flex: 1;
-  min-width: 100px;
-}
-
-/* Botões */
-button {
-  background-color: #4c6ef5;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-button:hover {
-  background-color: #364fc7;
-}
-
-/* Lista de contas */
-ul {
-  list-style: none;
-  padding-left: 0;
-  margin-top: 10px;
-}
-
-ul li {
-  padding: 6px 0;
-  border-bottom: 1px dashed #ddd;
-  font-size: 0.95rem;
-}
-
-/* Resumo */
-.resumo {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.resumo-card {
-  background-color: #fff;
-  flex: 1;
-  padding: 15px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.resumo-card p {
-  font-size: 0.9rem;
-  color: #777;
-  margin-bottom: 5px;
-}
-
-.resumo-card strong {
-  font-size: 1.2rem;
+  margin: 0;
+  background: var(--background);
+  font-family: 'Inter', Arial, sans-serif;
   color: #222;
 }
 
-/* Linha salário */
-.linha-salario {
-  display: flex;
-  justify-content: space-between;
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-  color: #444;
-}
-
-/* Rodapé fixo */
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #fff;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-}
-
-.footer button {
-  background: none;
-  border: none;
-  font-size: 0.9rem;
-  color: #666;
+.container {
+  max-width: 540px;
+  margin: 40px auto 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 80vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
 }
 
-.footer button.ativo {
-  color: #4c6ef5;
-  font-weight: bold;
+header {
+  padding: 32px 24px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  margin: 0 0 12px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  font-size: 2rem;
+}
+
+nav {
+  display: flex;
+  gap: 12px;
+}
+
+nav button {
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+nav button:hover {
+  background: #005bc2;
+}
+
+main {
+  flex: 1;
+  padding: 32px 24px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fafbfc;
+  transition: border .2s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+button[type="submit"], .button-row button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+button[type="submit"]:hover, .button-row button:hover {
+  background: #005bc2;
+}
+
+.idea-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 18px 18px 12px;
+  margin-bottom: 18px;
+  box-shadow: 0 1.5px 6px rgba(0,0,0,0.05);
+  border: 1px solid var(--border);
+}
+
+.idea-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.idea-card .meta {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.etapas-lista {
+  margin: 12px 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.etapas-lista li {
+  margin-bottom: 4px;
+  padding: 4px 0 4px 8px;
+  border-left: 3px solid var(--primary);
+  background: #f4f8ff;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.etapas-lista .etapa-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.etapas-lista .etapa-status {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.progress-bar {
+  height: 7px;
+  border-radius: 5px;
+  background: #e8eaf6;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #007aff 60%, #5ac8fa 100%);
+  transition: width .4s;
+}
+
+footer {
+  padding: 18px 0 10px;
+  text-align: center;
+  color: #888;
+  font-size: 0.95em;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
 }
