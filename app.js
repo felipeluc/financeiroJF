@@ -1,6 +1,27 @@
 // Sistema de Gestão de Projetos - JavaScript
+
+// Verificar autenticação
+function checkAuth() {
+    if (!localStorage.getItem("loggedIn") && !window.location.pathname.endsWith("login.html")) {
+        window.location.href = "login.html";
+        return false;
+    }
+    return true;
+}
+
+// Função de logout
+function logout() {
+    localStorage.removeItem("loggedIn");
+    window.location.href = "login.html";
+}
+
 class ProjectManager {
     constructor() {
+        // Verificar autenticação antes de inicializar
+        if (!checkAuth()) {
+            return;
+        }
+        
         this.projects = this.loadProjects();
         this.currentProject = null;
         this.currentDate = new Date();
@@ -1437,7 +1458,10 @@ class ProjectManager {
 let projectManager;
 
 document.addEventListener('DOMContentLoaded', () => {
-    projectManager = new ProjectManager();
+    // Só inicializar o ProjectManager se estiver autenticado e não for a página de login
+    if (localStorage.getItem("loggedIn") && !window.location.pathname.endsWith("login.html")) {
+        projectManager = new ProjectManager();
+    }
 });
 
 // Funções globais para eventos inline
