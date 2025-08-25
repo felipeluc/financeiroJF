@@ -1,30 +1,14 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Gestor de Ideias</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>💡 Gestor de Ideias</h1>
-      <nav>
-        <button id="btn-ideia">Nova Ideia</button>
-        <button id="btn-acompanhar">Acompanhamento</button>
-      </nav>
-    </header>
-    <main id="main-content">
-      <!-- Conteúdo dinâmico será inserido aqui -->
-    </main>
-    <footer>
-      <span>Desenvolvido por Professional Dev AI</span>
-    </footer>
-  </div>
-  <script src="app.js"></script>
-</body>
-</html>
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './style.css';
+
+// Caso opte por ThemeProvider e styled-components, adicione aqui (mas não é obrigatório para esse básico)
+
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
