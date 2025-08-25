@@ -14,7 +14,10 @@
     <nav class="sidebar" id="sidebar">
         <div class="nav-header">
             <h2>Gestão de Projetos</h2>
-            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <button class="btn btn-secondary" onclick="logout()" style="padding: 5px 10px; font-size: 12px;">Sair</button>
+            </div>
         </div>
         <ul class="nav-menu">
             <li><a href="#" data-section="dashboard" class="nav-link active">Dashboard</a></li>
