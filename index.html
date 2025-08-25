@@ -76,6 +76,7 @@
                     </button>
                 </div>
                 
+                <!-- Filtros avançados agora ficam ocultos por padrão -->
                 <div class="advanced-filters" id="advancedFilters">
                     <div class="filter-grid">
                         <div class="filter-group">
@@ -136,11 +137,12 @@
                     <span id="projectsCount">0 projetos encontrados</span>
                 </div>
                 <div class="view-options">
+                    <!-- Removendo emojis dos botões -->
                     <button class="btn btn-secondary view-toggle active" data-view="cards" id="viewCards">
-                        <span>📋</span> Cards
+                        Cards
                     </button>
                     <button class="btn btn-secondary view-toggle" data-view="table" id="viewTable">
-                        <span>📊</span> Tabela
+                        Tabela
                     </button>
                 </div>
             </div>
@@ -170,9 +172,9 @@
             </div>
             
             <div class="pagination" id="pagination">
-                <button class="btn btn-secondary" id="prevPage" disabled>« Anterior</button>
+                <button class="btn btn-secondary" id="prevPage" disabled>Anterior</button>
                 <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
-                <button class="btn btn-secondary" id="nextPage" disabled>Próxima »</button>
+                <button class="btn btn-secondary" id="nextPage" disabled>Próxima</button>
                 <div class="pagination-size">
                     <label for="pageSize">Itens por página:</label>
                     <select id="pageSize" class="filter-select">
@@ -217,9 +219,9 @@
         <section id="calendario" class="section">
             <h1>Calendário</h1>
             <div class="calendar-header">
-                <button class="btn btn-secondary" id="mesAnterior">‹ Anterior</button>
+                <button class="btn btn-secondary" id="mesAnterior">Anterior</button>
                 <h2 id="mesAno">Janeiro 2024</h2>
-                <button class="btn btn-secondary" id="proximoMes">Próximo ›</button>
+                <button class="btn btn-secondary" id="proximoMes">Próximo</button>
             </div>
             <div class="calendar-container">
                 <table class="calendar" id="calendar">
@@ -247,13 +249,24 @@
                 <div id="eventsList">
                     <p>Selecione um dia para ver as etapas agendadas.</p>
                 </div>
+                <!-- Nova seção para marcar tarefas como concluídas -->
+                <div class="daily-tasks" id="dailyTasks">
+                    <h3>Tarefas do Dia:</h3>
+                    <div id="tasksList">
+                        <p>Selecione um dia para gerenciar suas tarefas.</p>
+                    </div>
+                    <div class="add-task-section" id="addTaskSection" style="display: none;">
+                        <input type="text" id="newTaskInput" placeholder="Nova tarefa..." class="task-input">
+                        <button class="btn btn-primary" id="addTaskBtn">Adicionar</button>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- Detalhes do Projeto -->
         <section id="detalhes" class="section">
             <div class="project-header">
-                <button class="btn btn-secondary" id="voltarAcompanhar">‹ Voltar</button>
+                <button class="btn btn-secondary" id="voltarAcompanhar">Voltar</button>
                 <div class="project-actions">
                     <button class="btn btn-primary" id="editarProjetoBtn">Editar</button>
                     <button class="btn btn-danger" id="removerProjetoBtn">Remover</button>
@@ -383,14 +396,16 @@
         </div>
     </div>
 
-    <!-- Toast de Notificação -->
+    <!-- Toast de notificação -->
     <div class="toast" id="toast">
-        <div class="toast-icon" id="toastIcon">✓</div>
         <div class="toast-content">
-            <div class="toast-title" id="toastTitle">Sucesso</div>
-            <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
+            <div class="toast-icon" id="toastIcon">✓</div>
+            <div class="toast-text">
+                <div class="toast-title" id="toastTitle">Sucesso</div>
+                <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
+            </div>
+            <button class="toast-close" id="toastClose">&times;</button>
         </div>
-        <button class="toast-close" id="toastClose" aria-label="Fechar notificação">×</button>
     </div>
 
     <script src="app.js"></script>
