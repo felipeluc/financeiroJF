@@ -20,6 +20,7 @@
             <li><a href="#" data-section="dashboard" class="nav-link active">Dashboard</a></li>
             <li><a href="#" data-section="acompanhar" class="nav-link">Acompanhar</a></li>
             <li><a href="#" data-section="adicionar" class="nav-link">Adicionar Projeto</a></li>
+            <li><a href="#" data-section="ideias" class="nav-link">Ideias</a></li>
             <li><a href="#" data-section="calendario" class="nav-link">Calendário</a></li>
         </ul>
     </nav>
@@ -219,6 +220,23 @@
             </form>
         </section>
 
+        <!-- Ideias -->
+        <section id="ideias" class="section">
+            <h1>Ideias</h1>
+            <div class="ideas-header">
+                <div class="add-idea-section">
+                    <div class="add-idea-form">
+                        <input type="text" id="newIdeaTitle" placeholder="Título da ideia..." class="idea-input">
+                        <textarea id="newIdeaDescription" placeholder="Descreva sua ideia..." class="idea-textarea" rows="3"></textarea>
+                        <button class="btn btn-primary" id="addIdeaBtn">Adicionar Ideia</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ideas-container" id="ideasContainer">
+                <!-- Cards de ideias serão inseridos aqui -->
+            </div>
+        </section>
+
         <!-- Calendário -->
         <section id="calendario" class="section">
             <h1>Calendário</h1>
@@ -294,8 +312,28 @@
                     <h3>Etapas</h3>
                     <button class="btn btn-primary" id="adicionarEtapaBtn">Adicionar Etapa</button>
                 </div>
-                <div class="steps-list" id="stepsList">
-                    <!-- Etapas serão inseridas aqui -->
+                
+                <!-- Tabela de Etapas -->
+                <div class="steps-table-container">
+                    <table class="table steps-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Responsável</th>
+                                <th>Prazo</th>
+                                <th>Status</th>
+                                <th>Tarefas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stepsTableBody">
+                            <!-- Linhas da tabela de etapas serão inseridas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="steps-list hidden" id="stepsList">
+                    <!-- Etapas serão inseridas aqui (formato antigo) -->
                 </div>
             </div>
         </section>
@@ -429,6 +467,25 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarEtapa">Cancelar</button>
                 <button class="btn btn-primary" id="salvarEtapa">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes da Etapa -->
+    <div class="modal" id="stepDetailsModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="stepDetailsTitle">Detalhes da Etapa</h3>
+                <span class="close" id="closeStepDetailsModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="step-details-content" id="stepDetailsContent">
+                    <!-- Conteúdo dos detalhes da etapa será inserido aqui -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeStepDetails">Fechar</button>
+                <button class="btn btn-primary" id="editStepFromDetails">Editar Etapa</button>
             </div>
         </div>
     </div>
