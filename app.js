@@ -1,4 +1,4 @@
-// Sistema de Gestão de Projetos - JavaScript
+// Sistema de Gestão de Projetos - JavaScrip
 class ProjectManager {
     constructor() {
         this.projects = this.loadProjects();
