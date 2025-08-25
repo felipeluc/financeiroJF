@@ -1,14 +1,11 @@
-// Professional Dev AI - Gestão de Projetos SaaS - app.js
+// Professional Dev AI - Gestão de Projetos SaaS - app.js (com calendário, observação e PDF bonito)
 
 // --- MODELO DE DADOS ---
-// Projeto: { id, titulo, descricao, responsavel, prioridade, dataCriacao, etapas: [ { id, titulo, responsavel, prazo, concluida } ] }
-
 const PRIORIDADES = [
-  { value: 'alta', label: 'Alta', class: 'priority-alta' },
-  { value: 'media', label: 'Média', class: 'priority-media' },
-  { value: 'leve', label: 'Leve', class: 'priority-leve' },
+  { value: 'alta', label: 'Alta', class: 'priority-alta', color: '#e74c3c', text: '#fff' },
+  { value: 'media', label: 'Média', class: 'priority-media', color: '#f4d03f', text: '#232427' },
+  { value: 'leve', label: 'Leve', class: 'priority-leve', color: '#2980b9', text: '#fff' },
 ];
-
 const LS_KEY = 'gestao_projetos_v1';
 
 function getProjetos() {
@@ -63,6 +60,7 @@ const sections = {
   dashboard: renderDashboard,
   adicionar: renderAdicionarProjeto,
   acompanhar: renderAcompanhamento,
+  calendario: renderCalendario,
 };
 let currentSection = 'dashboard';
 
@@ -104,9 +102,154 @@ function renderDashboard() {
             )
           )
         )
+      ),
+      el('div', { style: 'margin:32px 0 0 0;text-align:right;' },
+        el('button', {
+          class: 'btn',
+          onclick: () => openModal(renderModalPDF(projetos))
+        }, 'Gerar PDF')
       )
     )
   );
+}
+
+// --- MODAL PDF ---
+function renderModalPDF(projetos) {
+  return el('div', {},
+    el('button', { class: 'modal-close', onclick: closeModal }, '×'),
+    el('h2', {}, 'Gerar PDF'),
+    el('form', { id: 'form-pdf' },
+      el('label', { for: 'pdf-projeto' }, 'Selecione o projeto'),
+      el('select', { id: 'pdf-projeto' },
+        el('option', { value: 'all' }, 'Todos os projetos'),
+        projetos.map(p => el('option', { value: p.id }, p.titulo))
+      ),
+      el('div', { class: 'button-row', style: 'margin-top:18px;' },
+        el('button', { class: 'btn', type: 'submit' }, 'Gerar PDF')
+      )
+    )
+  );
+}
+
+document.addEventListener('submit', function (e) {
+  if (e.target && e.target.id === 'form-pdf') {
+    e.preventDefault();
+    const projetos = getProjetos();
+    const sel = document.getElementById('pdf-projeto').value;
+    let lista = projetos;
+    if (sel !== 'all') lista = projetos.filter(p => p.id === sel);
+    gerarPDF(lista);
+    closeModal();
+  }
+});
+
+function gerarPDF(projetos) {
+  if (!window.jspdf || !window.jspdf.jsPDF || !window.jspdf.autoTable) {
+    showToast('jsPDF ou autoTable não carregados!');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt');
+  let y = 36;
+
+  // Título
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.text('Gestão de Projetos', 38, y, { baseline: 'top' });
+  y += 28;
+
+  projetos.forEach((projeto, idx) => {
+    if (idx > 0) y += 18;
+    // Cabeçalho do Projeto
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text(projeto.titulo, 38, y);
+    y += 18;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const prioridade = PRIORIDADES.find(p => p.value === projeto.prioridade);
+    doc.setTextColor(80, 80, 80);
+    doc.text([
+      `Responsável: ${projeto.responsavel || '—'}`,
+      `Prioridade: ${prioridade.label}`,
+      `Criado em: ${(new Date(projeto.dataCriacao)).toLocaleDateString()}`
+    ], 38, y);
+    y += 34;
+
+    if (projeto.descricao) {
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(60, 60, 60);
+      doc.text(projeto.descricao, 38, y, { maxWidth: 520 });
+      y += 22;
+    }
+
+    // Badge Prioridade (visual)
+    doc.setFillColor(prioridade.color);
+    doc.roundedRect(440, y - 30, 80, 26, 7, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(prioridade.text);
+    doc.text(prioridade.label, 480, y - 14, { align: 'center' });
+
+    // Etapas
+    if (projeto.etapas && projeto.etapas.length) {
+      y += 6;
+      doc.setTextColor(40, 40, 40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('Etapas:', 38, y);
+      y += 7;
+
+      const rows = projeto.etapas.map(etapa => [
+        etapa.titulo,
+        etapa.responsavel || '—',
+        etapa.prazo ? (new Date(etapa.prazo)).toLocaleDateString() : '—',
+        etapa.concluida ? 'Concluída' : 'Pendente',
+        etapa.observacao || ''
+      ]);
+      doc.autoTable({
+        startY: y,
+        margin: { left: 38, right: 24 },
+        head: [['Título', 'Responsável', 'Prazo', 'Status', 'Observação']],
+        body: rows,
+        styles: {
+          font: 'helvetica',
+          fontSize: 10,
+          textColor: [32, 32, 32],
+          halign: 'left',
+          cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [60, 60, 60],
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: { fillColor: [252, 252, 252] },
+        rowPageBreak: 'avoid'
+      });
+      y = doc.lastAutoTable.finalY + 18;
+    } else {
+      y += 8;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(11);
+      doc.setTextColor(180, 180, 180);
+      doc.text('Nenhuma etapa cadastrada.', 38, y);
+      y += 14;
+    }
+
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(220, 220, 220);
+    doc.line(32, y, 570, y);
+    y += 24;
+    if (y > 700 && idx < projetos.length - 1) {
+      doc.addPage();
+      y = 36;
+    }
+  });
+
+  doc.save('gestao_projetos.pdf');
+  showToast('PDF gerado com sucesso!');
 }
 
 // --- NOVO PROJETO ---
@@ -180,6 +323,8 @@ function renderEditarProjeto(id) {
           el('input', { id: 'etapa-responsavel', maxlength: 48 }),
           el('label', { for: 'etapa-prazo' }, 'Prazo'),
           el('input', { id: 'etapa-prazo', type: 'date' }),
+          el('label', { for: 'etapa-observacao' }, 'Observação'),
+          el('textarea', { id: 'etapa-observacao', rows: 2, maxlength: 160 }),
           el('div', { class: 'button-row' },
             el('button', { class: 'btn', type: 'submit' }, 'Adicionar')
           )
@@ -195,6 +340,7 @@ function renderEditarProjeto(id) {
         titulo,
         responsavel: document.getElementById('etapa-responsavel').value.trim(),
         prazo: document.getElementById('etapa-prazo').value,
+        observacao: document.getElementById('etapa-observacao').value.trim(),
         concluida: false,
       });
       salvarEAtualizar();
@@ -216,6 +362,8 @@ function renderEditarProjeto(id) {
           el('input', { id: 'etapa-responsavel', maxlength: 48, value: etapa.responsavel }),
           el('label', { for: 'etapa-prazo' }, 'Prazo'),
           el('input', { id: 'etapa-prazo', type: 'date', value: etapa.prazo }),
+          el('label', { for: 'etapa-observacao' }, 'Observação'),
+          el('textarea', { id: 'etapa-observacao', rows: 2, maxlength: 160 }, etapa.observacao || ''),
           el('div', { class: 'button-row' },
             el('button', { class: 'btn', type: 'submit' }, 'Salvar'),
             el('button', { class: 'btn danger', type: 'button', onclick: () => { 
@@ -235,6 +383,7 @@ function renderEditarProjeto(id) {
       etapa.titulo = document.getElementById('etapa-titulo').value.trim();
       etapa.responsavel = document.getElementById('etapa-responsavel').value.trim();
       etapa.prazo = document.getElementById('etapa-prazo').value;
+      etapa.observacao = document.getElementById('etapa-observacao').value.trim();
       salvarEAtualizar();
       closeModal();
       showToast('Etapa atualizada');
@@ -341,7 +490,8 @@ function renderEditarProjeto(id) {
                 el('span', { style: 'font-size:.97em;color:var(--secondary);' },
                   etapa.responsavel ? `Resp.: ${etapa.responsavel}` : '',
                   etapa.prazo ? ` | Prazo: ${(new Date(etapa.prazo)).toLocaleDateString()}` : ''
-                )
+                ),
+                etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
               ),
               el('div', { class: 'etapa-status' },
                 el('label', {},
@@ -444,7 +594,8 @@ function renderAcompanhamento() {
                   el('span', { style: 'font-size:.97em;color:var(--secondary);' },
                     etapa.responsavel ? `Resp.: ${etapa.responsavel}` : '',
                     etapa.prazo ? ` | Prazo: ${(new Date(etapa.prazo)).toLocaleDateString()}` : ''
-                  )
+                  ),
+                  etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
                 )
               )
             )
@@ -483,10 +634,108 @@ function renderAcompanhamento() {
   atualizarLista();
 }
 
+// --- CALENDÁRIO ---
+function renderCalendario() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  let hoje = new Date();
+  let mes = hoje.getMonth();
+  let ano = hoje.getFullYear();
+
+  function renderMes() {
+    main.innerHTML = '';
+    main.appendChild(
+      el('h2', {}, 'Calendário de Projetos e Etapas'),
+      el('div', { style: 'display:flex;align-items:center;gap:18px;margin-bottom:16px;' },
+        el('button', { class: 'btn', onclick: () => { mes--; if (mes < 0) { mes = 11; ano--; } renderMes(); } }, '‹'),
+        el('span', { style: 'font-size:1.12em;font-weight:600;' }, `${mesNome(mes)} / ${ano}`),
+        el('button', { class: 'btn', onclick: () => { mes++; if (mes > 11) { mes = 0; ano++; } renderMes(); } }, '›')
+      )
+    );
+
+    // Monta calendário
+    const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const table = el('table', { class: 'calendar-table' });
+    const head = el('tr', {}, diasSemana.map(dia => el('th', {}, dia)));
+    table.appendChild(el('thead', {}, head));
+    const firstDay = new Date(ano, mes, 1).getDay();
+    const lastDate = new Date(ano, mes + 1, 0).getDate();
+    let tr = el('tr', {});
+    let dia = 1;
+    for (let i = 0; i < 42; i++) {
+      if (i % 7 === 0 && i > 0) {
+        table.appendChild(tr);
+        tr = el('tr', {});
+      }
+      if (i < firstDay || dia > lastDate) {
+        tr.appendChild(el('td', {}, ''));
+      } else {
+        const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        tr.appendChild(el('td', {
+          class: 'calendar-day' + (isHoje(ano, mes, dia) ? ' today' : ''),
+          onclick: () => mostrarAgendaDia(dataStr)
+        }, dia));
+        dia++;
+      }
+    }
+    table.appendChild(tr);
+    main.appendChild(table);
+    main.appendChild(el('div', { id: 'calendar-agenda', style: 'margin-top:28px;' }));
+  }
+
+  function mostrarAgendaDia(dataStr) {
+    const projetos = getProjetos();
+    let etapasDoDia = [];
+    let projetosDoDia = [];
+    projetos.forEach(proj => {
+      proj.etapas.forEach(etapa => {
+        if (etapa.prazo === dataStr) etapasDoDia.push({ ...etapa, projeto: proj });
+      });
+      if (proj.etapas.some(et => et.prazo === dataStr)) projetosDoDia.push(proj);
+    });
+    const agenda = document.getElementById('calendar-agenda');
+    agenda.innerHTML = '';
+    agenda.appendChild(el('h3', {}, `Itens para ${dataStr.split('-').reverse().join('/')}`));
+    if (!etapasDoDia.length) {
+      agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhuma etapa agendada.'));
+    } else {
+      agenda.appendChild(
+        el('ul', { class: 'etapas-lista' },
+          etapasDoDia.map(etapa =>
+            el('li', { class: etapa.concluida ? 'done' : '' },
+              el('div', { class: 'etapa-info' },
+                el('span', {}, etapa.titulo),
+                el('span', { style: 'font-size:.97em;color:var(--secondary);' },
+                  `Projeto: ${etapa.projeto.titulo}`,
+                  etapa.responsavel ? ` | Resp.: ${etapa.responsavel}` : ''
+                ),
+                etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
+              ),
+              el('div', { class: 'etapa-status' },
+                el('span', {}, etapa.concluida ? 'Concluída' : 'Pendente')
+              )
+            )
+          )
+        )
+      );
+    }
+  }
+
+  function mesNome(m) {
+    return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m];
+  }
+  function isHoje(y, m, d) {
+    const now = new Date();
+    return y === now.getFullYear() && m === now.getMonth() && d === now.getDate();
+  }
+  renderMes();
+}
+
 // --- EVENTOS DE NAVEGAÇÃO ---
 document.getElementById('menu-dashboard').onclick = () => setSection('dashboard');
 document.getElementById('menu-adicionar').onclick = () => setSection('adicionar');
 document.getElementById('menu-acompanhar').onclick = () => setSection('acompanhar');
+document.getElementById('menu-calendario').onclick = () => setSection('calendario');
 
 // --- INICIALIZAÇÃO ---
 setSection('dashboard');
