@@ -309,7 +309,7 @@ class ProjectManager {
             .filter(r => r && r.trim())
         )].sort();
 
-        select.innerHTML = '<option value="">Todos</option>' +
+        select.innerHTML = '<option value="">' + 'Todos' + '</option>' +
             responsibles.map(r => `<option value="${r}">${r}</option>`).join('');
     }
 
@@ -483,6 +483,7 @@ class ProjectManager {
             responsavel: formData.get('responsavel'),
             prioridade: formData.get('prioridade'),
             dataCriacao: new Date().toISOString(),
+            dataEntrega: formData.get('dataEntrega') || null, // Novo campo
             etapas: []
         };
 
@@ -522,6 +523,7 @@ class ProjectManager {
         
         const progress = this.calculateProgress(project);
         const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
+        const deliveryDate = project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
 
         container.innerHTML = `
             <div class="project-info">
@@ -536,6 +538,10 @@ class ProjectManager {
                 <div class="info-item">
                     <h4>Data de Criação</h4>
                     <p>${creationDate}</p>
+                </div>
+                <div class="info-item">
+                    <h4>Data de Entrega</h4>
+                    <p>${deliveryDate}</p>
                 </div>
                 <div class="info-item">
                     <h4>Prioridade</h4>
@@ -573,6 +579,7 @@ class ProjectManager {
                         <div class="step-meta">
                             <div><strong>Responsável:</strong> ${step.responsavel || 'Não informado'}</div>
                             <div><strong>Prazo:</strong> ${step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido'}</div>
+                            ${step.link ? `<div><strong>Link:</strong> <a href="${step.link}" target="_blank">${step.link}</a></div>` : ''}
                         </div>
                         ${step.observacao ? `<div class="step-observation">${step.observacao}</div>` : ''}
                     </div>
@@ -601,6 +608,7 @@ class ProjectManager {
             document.getElementById('etapaTitulo').value = step.titulo;
             document.getElementById('etapaResponsavel').value = step.responsavel || '';
             document.getElementById('etapaPrazo').value = step.prazo || '';
+            document.getElementById('etapaLink').value = step.link || ''; // Novo campo
             document.getElementById('etapaObservacao').value = step.observacao || '';
             document.getElementById('etapaConcluida').checked = step.concluida;
             modal.dataset.stepId = stepId;
@@ -625,6 +633,7 @@ class ProjectManager {
             titulo: document.getElementById('etapaTitulo').value,
             responsavel: document.getElementById('etapaResponsavel').value,
             prazo: document.getElementById('etapaPrazo').value,
+            link: document.getElementById('etapaLink').value, // Novo campo
             observacao: document.getElementById('etapaObservacao').value,
             concluida: document.getElementById('etapaConcluida').checked
         };
@@ -719,6 +728,7 @@ class ProjectManager {
         container.innerHTML = projects.map(project => {
             const progress = this.calculateProgress(project);
             const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
+            const deliveryDate = project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
             const visibleSteps = project.etapas.slice(0, 2);
             const hasMoreSteps = project.etapas.length > 2;
 
@@ -734,6 +744,7 @@ class ProjectManager {
                     <div class="project-meta">
                         <span>Responsável: ${project.responsavel || 'Não informado'}</span>
                         <span>Criado em: ${creationDate}</span>
+                        <span>Entrega: ${deliveryDate}</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${progress}%"></div>
@@ -778,6 +789,7 @@ class ProjectManager {
         tableBody.innerHTML = projects.map(project => {
             const progress = this.calculateProgress(project);
             const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
+            const deliveryDate = project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
 
             return `
                 <tr onclick="projectManager.showProjectDetails('${project.id}')" style="cursor: pointer;">
@@ -793,6 +805,7 @@ class ProjectManager {
                         </div>
                     </td>
                     <td>${creationDate}</td>
+                    <td>${deliveryDate}</td>
                     <td>
                         <div class="table-actions">
                             <button class="btn btn-secondary" onclick="event.stopPropagation(); projectManager.showProjectDetails('${project.id}')">Ver</button>
@@ -829,6 +842,7 @@ class ProjectManager {
         document.getElementById('editDescricao').value = project.descricao || '';
         document.getElementById('editResponsavel').value = project.responsavel || '';
         document.getElementById('editPrioridade').value = project.prioridade;
+        document.getElementById('editDataEntrega').value = project.dataEntrega || ''; // Novo campo
 
         document.getElementById('editarProjetoModal').classList.add('show');
     }
@@ -842,7 +856,8 @@ class ProjectManager {
             titulo: document.getElementById('editTitulo').value,
             descricao: document.getElementById('editDescricao').value,
             responsavel: document.getElementById('editResponsavel').value,
-            prioridade: document.getElementById('editPrioridade').value
+            prioridade: document.getElementById('editPrioridade').value,
+            dataEntrega: document.getElementById('editDataEntrega').value || null // Novo campo
         };
 
         if (!updatedData.titulo.trim()) {
@@ -1086,6 +1101,7 @@ class ProjectManager {
                 <div class="event-meta">
                     Responsável: ${event.step.responsavel || 'Não informado'} | 
                     ${event.step.observacao || 'Sem observações'}
+                    ${event.step.link ? ` | Link: <a href="${event.step.link}" target="_blank">${event.step.link}</a>` : ''}
                 </div>
             </div>
         `).join('');
@@ -1207,7 +1223,7 @@ class ProjectManager {
     // Geração de PDF
     showPdfModal() {
         const select = document.getElementById('projetoEspecifico');
-        select.innerHTML = '<option value="">Selecione um projeto</option>' +
+        select.innerHTML = '<option value="">' + 'Selecione um projeto' + '</option>' +
             this.projects.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
         
         document.getElementById('pdfModal').classList.add('show');
@@ -1279,6 +1295,7 @@ class ProjectManager {
                 `Responsável: ${project.responsavel || 'Não informado'}`,
                 `Prioridade: ${project.prioridade.toUpperCase()}`,
                 `Data de Criação: ${new Date(project.dataCriacao).toLocaleDateString('pt-BR')}`,
+                `Data de Entrega: ${project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida'}`,
                 `Progresso: ${this.calculateProgress(project)}%`
             ];
 
@@ -1298,12 +1315,13 @@ class ProjectManager {
                     step.titulo,
                     step.responsavel || 'N/A',
                     step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'N/A',
+                    step.link || 'N/A', // Novo campo
                     step.concluida ? 'Sim' : 'Não',
                     step.observacao || 'N/A'
                 ]);
 
                 doc.autoTable({
-                    head: [['Título', 'Responsável', 'Prazo', 'Concluída', 'Observação']],
+                    head: [['Título', 'Responsável', 'Prazo', 'Link', 'Concluída', 'Observação']], // Cabeçalho atualizado
                     body: tableData,
                     startY: yPosition,
                     margin: { left: margin, right: margin },
