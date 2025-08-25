@@ -5,58 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão de Projetos</title>
     <link rel="stylesheet" href="style.css">
+    <!-- CDN jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-    <!-- Sidebar -->
+    <!-- Navegação -->
     <nav class="sidebar" id="sidebar">
         <div class="nav-header">
             <h2>Gestão de Projetos</h2>
-            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <button class="btn btn-secondary" onclick="logout()" style="padding: 5px 10px; font-size: 12px;">Sair</button>
+            </div>
         </div>
         <ul class="nav-menu">
-            <li><a href="#" class="nav-link active" data-section="dashboard">Dashboard</a></li>
-            <li><a href="#" class="nav-link" data-section="acompanhar">Acompanhar</a></li>
-            <li><a href="#" class="nav-link" data-section="adicionar">Adicionar Projeto</a></li>
-            <li><a href="#" class="nav-link" data-section="calendario">Calendário</a></li>
+            <li><a href="#" data-section="dashboard" class="nav-link active">Dashboard</a></li>
+            <li><a href="#" data-section="acompanhar" class="nav-link">Acompanhar</a></li>
+            <li><a href="#" data-section="adicionar" class="nav-link">Adicionar Projeto</a></li>
+            <li><a href="#" data-section="calendario" class="nav-link">Calendário</a></li>
         </ul>
-        <div style="margin-top: auto; padding-top: 2rem;">
-            <button class="btn btn-secondary" onclick="logout()">Sair</button>
-        </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Conteúdo Principal -->
     <main class="main-content">
-        <!-- Dashboard Section -->
+        <!-- Dashboard -->
         <section id="dashboard" class="section active">
             <h1>Dashboard</h1>
-            
             <div class="dashboard-cards">
                 <div class="card">
                     <h3>Total de Projetos</h3>
-                    <div class="card-number" id="totalProjetos">0</div>
+                    <span class="card-number" id="totalProjetos">0</span>
                 </div>
                 <div class="card">
                     <h3>Concluídos</h3>
-                    <div class="card-number" id="projetosConcluidos">0</div>
+                    <span class="card-number" id="projetosConcluidos">0</span>
                 </div>
                 <div class="card">
                     <h3>Em Andamento</h3>
-                    <div class="card-number" id="projetosAndamento">0</div>
+                    <span class="card-number" id="projetosAndamento">0</span>
                 </div>
             </div>
-
+            
             <div class="priority-cards">
                 <div class="card priority-alta">
                     <h3>Prioridade Alta</h3>
-                    <div class="card-number" id="prioridadeAlta">0</div>
+                    <span class="card-number" id="prioridadeAlta">0</span>
                 </div>
                 <div class="card priority-media">
                     <h3>Prioridade Média</h3>
-                    <div class="card-number" id="prioridadeMedia">0</div>
+                    <span class="card-number" id="prioridadeMedia">0</span>
                 </div>
                 <div class="card priority-leve">
                     <h3>Prioridade Leve</h3>
-                    <div class="card-number" id="prioridadeLeve">0</div>
+                    <span class="card-number" id="prioridadeLeve">0</span>
                 </div>
             </div>
 
@@ -65,23 +67,23 @@
             </div>
         </section>
 
-        <!-- Acompanhar Projetos Section -->
+        <!-- Acompanhar -->
         <section id="acompanhar" class="section">
             <h1>Acompanhar Projetos</h1>
-            
-            <!-- Filtros -->
             <div class="filter-section">
                 <div class="filter-row">
-                    <input type="text" id="filtroTexto" class="filter-input" placeholder="Buscar por título, descrição ou responsável...">
+                    <input type="text" id="filtroTexto" placeholder="Buscar por título, descrição ou responsável..." class="filter-input">
                     <button class="btn btn-secondary filter-toggle" id="toggleAdvancedFilters">
-                        Filtros Avançados <span class="filter-arrow">▼</span>
+                        <span>Filtros Avançados</span>
+                        <span class="filter-arrow">▼</span>
                     </button>
                 </div>
                 
+                <!-- Filtros avançados agora ficam ocultos por padrão -->
                 <div class="advanced-filters" id="advancedFilters">
                     <div class="filter-grid">
                         <div class="filter-group">
-                            <label>Prioridade</label>
+                            <label for="filtroPrioridade">Prioridade</label>
                             <select id="filtroPrioridade" class="filter-select">
                                 <option value="">Todas</option>
                                 <option value="alta">Alta</option>
@@ -89,61 +91,70 @@
                                 <option value="leve">Leve</option>
                             </select>
                         </div>
+                        
                         <div class="filter-group">
-                            <label>Status</label>
+                            <label for="filtroStatus">Status</label>
                             <select id="filtroStatus" class="filter-select">
                                 <option value="">Todos</option>
                                 <option value="concluido">Concluído</option>
                                 <option value="andamento">Em Andamento</option>
                             </select>
                         </div>
+                        
                         <div class="filter-group">
-                            <label>Responsável</label>
+                            <label for="filtroResponsavel">Responsável</label>
                             <select id="filtroResponsavel" class="filter-select">
                                 <option value="">Todos</option>
+                                <!-- Opções serão preenchidas dinamicamente -->
                             </select>
                         </div>
+                        
                         <div class="filter-group">
-                            <label>Ordenar por</label>
+                            <label for="ordenarPor">Ordenar por</label>
                             <select id="ordenarPor" class="filter-select">
                                 <option value="prioridade">Prioridade</option>
                                 <option value="titulo">Título</option>
-                                <option value="responsavel">Responsável</option>
                                 <option value="data">Data de Criação</option>
+                                <option value="responsavel">Responsável</option>
                                 <option value="progresso">Progresso</option>
                             </select>
                         </div>
+                        
                         <div class="filter-group">
-                            <label>Direção</label>
+                            <label for="direcaoOrdem">Direção</label>
                             <select id="direcaoOrdem" class="filter-select">
                                 <option value="desc">Decrescente</option>
                                 <option value="asc">Crescente</option>
                             </select>
                         </div>
+                        
                         <div class="filter-group filter-actions">
                             <button class="btn btn-secondary" id="limparFiltros">Limpar Filtros</button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Cabeçalho dos projetos -->
+            
             <div class="projects-header">
-                <div class="projects-count" id="projectsCount">0 projetos</div>
+                <div class="projects-count">
+                    <span id="projectsCount">0 projetos encontrados</span>
+                </div>
                 <div class="view-options">
-                    <button class="btn btn-secondary view-toggle active" id="viewCards">Cards</button>
-                    <button class="btn btn-secondary view-toggle" id="viewTable">Tabela</button>
+                    <!-- Removendo emojis dos botões -->
+                    <button class="btn btn-secondary view-toggle active" data-view="cards" id="viewCards">
+                        Cards
+                    </button>
+                    <button class="btn btn-secondary view-toggle" data-view="table" id="viewTable">
+                        Tabela
+                    </button>
                 </div>
             </div>
-
-            <!-- Container dos projetos -->
+            
             <div class="projects-container">
-                <!-- Lista de projetos (cards) -->
                 <div class="projects-list" id="projectsList">
-                    <!-- Projetos serão inseridos aqui via JavaScript -->
+                    <!-- Projetos serão inseridos aqui dinamicamente -->
                 </div>
-
-                <!-- Tabela de projetos -->
+                
                 <div class="projects-table hidden" id="projectsTable">
                     <table class="table">
                         <thead>
@@ -153,27 +164,23 @@
                                 <th class="sortable" data-sort="prioridade">Prioridade</th>
                                 <th class="sortable" data-sort="progresso">Progresso</th>
                                 <th class="sortable" data-sort="data">Data</th>
-                                <th class="sortable" data-sort="dataEntrega">Data de Entrega</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="projectsTableBody">
-                            <!-- Linhas da tabela serão inseridas aqui via JavaScript -->
+                            <!-- Linhas da tabela serão inseridas aqui -->
                         </tbody>
                     </table>
                 </div>
             </div>
-
-            <!-- Paginação -->
-            <div class="pagination">
-                <div class="pagination-info" id="paginationInfo">Página 1 de 1</div>
-                <div class="pagination-controls">
-                    <button class="btn btn-secondary" id="prevPage">Anterior</button>
-                    <button class="btn btn-secondary" id="nextPage">Próxima</button>
-                </div>
+            
+            <div class="pagination" id="pagination">
+                <button class="btn btn-secondary" id="prevPage" disabled>Anterior</button>
+                <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
+                <button class="btn btn-secondary" id="nextPage" disabled>Próxima</button>
                 <div class="pagination-size">
-                    <label>Itens por página:</label>
-                    <select id="pageSize">
+                    <label for="pageSize">Itens por página:</label>
+                    <select id="pageSize" class="filter-select">
                         <option value="5">5</option>
                         <option value="10" selected>10</option>
                         <option value="20">20</option>
@@ -183,26 +190,22 @@
             </div>
         </section>
 
-        <!-- Adicionar Projeto Section -->
+        <!-- Adicionar Projeto -->
         <section id="adicionar" class="section">
             <h1>Adicionar Projeto</h1>
-            
-            <form class="project-form" id="adicionarProjetoForm">
+            <form id="adicionarProjetoForm" class="project-form">
                 <div class="form-group">
                     <label for="titulo">Título *</label>
                     <input type="text" id="titulo" name="titulo" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="descricao">Descrição</label>
-                    <textarea id="descricao" name="descricao" rows="4" placeholder="Descreva o projeto..."></textarea>
+                    <textarea id="descricao" name="descricao" rows="4"></textarea>
                 </div>
-                
                 <div class="form-group">
                     <label for="responsavel">Responsável</label>
                     <input type="text" id="responsavel" name="responsavel">
                 </div>
-                
                 <div class="form-group">
                     <label for="prioridade">Prioridade</label>
                     <select id="prioridade" name="prioridade">
@@ -211,29 +214,24 @@
                         <option value="leve">Leve</option>
                     </select>
                 </div>
-                
                 <div class="form-group">
                     <label for="dataEntrega">Data de Entrega</label>
                     <input type="date" id="dataEntrega" name="dataEntrega">
                 </div>
-                
                 <button type="submit" class="btn btn-primary">Salvar Projeto</button>
             </form>
         </section>
 
-        <!-- Calendário Section -->
+        <!-- Calendário -->
         <section id="calendario" class="section">
+            <h1>Calendário</h1>
             <div class="calendar-header">
-                <h1>Calendário</h1>
-                <div>
-                    <button class="btn btn-secondary" id="mesAnterior">‹ Anterior</button>
-                    <span id="mesAno"></span>
-                    <button class="btn btn-secondary" id="proximoMes">Próximo ›</button>
-                </div>
+                <button class="btn btn-secondary" id="mesAnterior">Anterior</button>
+                <h2 id="mesAno">Janeiro 2024</h2>
+                <button class="btn btn-secondary" id="proximoMes">Próximo</button>
             </div>
-            
             <div class="calendar-container">
-                <table class="calendar">
+                <table class="calendar" id="calendar">
                     <thead>
                         <tr>
                             <th>Dom</th>
@@ -246,63 +244,62 @@
                         </tr>
                     </thead>
                     <tbody id="calendarBody">
-                        <!-- Dias do calendário serão inseridos aqui via JavaScript -->
+                        <!-- Dias do calendário serão inseridos aqui -->
                     </tbody>
                 </table>
+                <div class="calendar-tooltip" id="calendarTooltip">
+                    <!-- Conteúdo do tooltip será inserido aqui -->
+                </div>
             </div>
-
-            <div class="calendar-events">
-                <h3>Ideias do dia selecionado:</h3>
+            <div class="calendar-events" id="calendarEvents">
+                <h3>Etapas do dia selecionado:</h3>
                 <div id="eventsList">
                     <p>Selecione um dia para ver as etapas agendadas.</p>
                 </div>
-            </div>
-
-            <div class="daily-tasks">
-                <h3>Tarefas do Dia:</h3>
-                <div id="tasksList">
-                    <p>Selecione um dia para gerenciar suas tarefas.</p>
-                </div>
-                <div class="add-task-section" id="addTaskSection" style="display: none;">
-                    <input type="text" id="newTaskInput" class="task-input" placeholder="Nova tarefa...">
-                    <button class="btn btn-primary" id="addTaskBtn">Adicionar</button>
+                <!-- Nova seção para marcar tarefas como concluídas -->
+                <div class="daily-tasks" id="dailyTasks">
+                    <h3>Tarefas do Dia:</h3>
+                    <div id="tasksList">
+                        <p>Selecione um dia para gerenciar suas tarefas.</p>
+                    </div>
+                    <div class="add-task-section" id="addTaskSection" style="display: none;">
+                        <input type="text" id="newTaskInput" placeholder="Nova tarefa..." class="task-input">
+                        <button class="btn btn-primary" id="addTaskBtn">Adicionar</button>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Detalhes do Projeto Section -->
+        <!-- Detalhes do Projeto -->
         <section id="detalhes" class="section">
             <div class="project-header">
-                <h1>Detalhes do Projeto</h1>
+                <button class="btn btn-secondary" id="voltarAcompanhar">Voltar</button>
                 <div class="project-actions">
-                    <button class="btn btn-secondary" id="voltarAcompanhar">Voltar</button>
                     <button class="btn btn-primary" id="editarProjetoBtn">Editar</button>
                     <button class="btn btn-danger" id="removerProjetoBtn">Remover</button>
                 </div>
             </div>
-            
-            <div id="projectDetails">
-                <!-- Detalhes do projeto serão inseridos aqui via JavaScript -->
+            <div class="project-details" id="projectDetails">
+                <!-- Detalhes do projeto serão inseridos aqui -->
             </div>
-
-            <div class="ideas-section">
-                <div class="ideas-header">
-                    <h3>Ideias</h3>
-                    <button class="btn btn-primary" id="adicionarIdeiaBtn">Adicionar Ideia</button>
+            <div class="steps-section">
+                <div class="steps-header">
+                    <h3>Etapas</h3>
+                    <button class="btn btn-primary" id="adicionarEtapaBtn">Adicionar Etapa</button>
                 </div>
-                <div id="ideasList">
-                    <!-- Lista de ideias será inserida aqui via JavaScript -->
+                <div class="steps-list" id="stepsList">
+                    <!-- Etapas serão inseridas aqui -->
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Modal PDF -->
+    <!-- Modal Gerar PDF -->
     <div class="modal" id="pdfModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Gerar Relatório PDF</h3>
-                <button class="close" id="closePdfModal">&times;</button>
+                <h3>Gerar PDF</h3>
+                <span class="close" id="closePdfModal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -333,37 +330,35 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Editar Projeto</h3>
-                <button class="close" id="closeEditarModal">&times;</button>
+                <span class="close" id="closeEditarModal">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="editTitulo">Título *</label>
-                    <input type="text" id="editTitulo" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="editDescricao">Descrição</label>
-                    <textarea id="editDescricao" rows="4" placeholder="Descreva o projeto..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="editResponsavel">Responsável</label>
-                    <input type="text" id="editResponsavel">
-                </div>
-                
-                <div class="form-group">
-                    <label for="editPrioridade">Prioridade</label>
-                    <select id="editPrioridade">
-                        <option value="alta">Alta</option>
-                        <option value="media">Média</option>
-                        <option value="leve">Leve</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="editDataEntrega">Data de Entrega</label>
-                    <input type="date" id="editDataEntrega">
-                </div>
+                <form id="editarProjetoForm">
+                    <div class="form-group">
+                        <label for="editTitulo">Título *</label>
+                        <input type="text" id="editTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescricao">Descrição</label>
+                        <textarea id="editDescricao" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editResponsavel">Responsável</label>
+                        <input type="text" id="editResponsavel">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrioridade">Prioridade</label>
+                        <select id="editPrioridade">
+                            <option value="alta">Alta</option>
+                            <option value="media">Média</option>
+                            <option value="leve">Leve</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDataEntrega">Data de Entrega</label>
+                        <input type="date" id="editDataEntrega" name="editDataEntrega">
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarEdicao">Cancelar</button>
@@ -372,39 +367,12 @@
         </div>
     </div>
 
-    <!-- Modal Ideia -->
-    <div class="modal" id="ideiaModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="ideiaModalTitle">Adicionar Ideia</h3>
-                <button class="close" id="closeIdeiaModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="ideiaForm">
-                    <div class="form-group">
-                        <label for="ideiaTitulo">Título *</label>
-                        <input type="text" id="ideiaTitulo" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="ideiaDescricao">Descrição</label>
-                        <textarea id="ideiaDescricao" rows="4" placeholder="Descreva a ideia..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelarIdeia">Cancelar</button>
-                <button class="btn btn-primary" id="salvarIdeia">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Etapa -->
+    <!-- Modal Adicionar/Editar Etapa -->
     <div class="modal" id="etapaModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="etapaModalTitle">Adicionar Etapa</h3>
-                <button class="close" id="closeEtapaModal">&times;</button>
+                <span class="close" id="closeEtapaModal">&times;</span>
             </div>
             <div class="modal-body">
                 <form id="etapaForm">
@@ -412,27 +380,22 @@
                         <label for="etapaTitulo">Título *</label>
                         <input type="text" id="etapaTitulo" required>
                     </div>
-                    
                     <div class="form-group">
                         <label for="etapaResponsavel">Responsável</label>
                         <input type="text" id="etapaResponsavel">
                     </div>
-                    
                     <div class="form-group">
                         <label for="etapaPrazo">Prazo</label>
                         <input type="date" id="etapaPrazo">
                     </div>
-                    
                     <div class="form-group">
                         <label for="etapaLink">Link</label>
-                        <input type="url" id="etapaLink" placeholder="https://exemplo.com">
+                        <input type="text" id="etapaLink" placeholder="https://exemplo.com">
                     </div>
-                    
                     <div class="form-group">
                         <label for="etapaObservacao">Observação</label>
-                        <textarea id="etapaObservacao" rows="4" placeholder="Observações sobre a etapa..."></textarea>
+                        <textarea id="etapaObservacao" rows="3"></textarea>
                     </div>
-                    
                     <div class="form-group">
                         <label>
                             <input type="checkbox" id="etapaConcluida">
@@ -448,7 +411,7 @@
         </div>
     </div>
 
-    <!-- Toast -->
+    <!-- Toast Notification -->
     <div class="toast" id="toast">
         <div class="toast-icon" id="toastIcon">✓</div>
         <div class="toast-content">
@@ -458,12 +421,6 @@
         <button class="toast-close" id="toastClose">&times;</button>
     </div>
 
-    <!-- Tooltip do calendário -->
-    <div class="calendar-tooltip" id="calendarTooltip"></div>
-
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
