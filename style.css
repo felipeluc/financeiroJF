@@ -1578,3 +1578,289 @@ body {
     }
 }
 
+
+/* Estilos para Tabela de Etapas */
+.steps-table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+.steps-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.steps-table th,
+.steps-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.steps-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+.step-row:hover {
+    background-color: #f8f9fa;
+}
+
+.completed-row {
+    opacity: 0.7;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Modal de Detalhes da Etapa */
+.modal-large .modal-content {
+    max-width: 800px;
+    width: 90%;
+}
+
+.step-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.detail-item {
+    margin-bottom: 15px;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-item h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item p {
+    margin: 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.detail-item a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.detail-item a:hover {
+    text-decoration: underline;
+}
+
+.tasks-list-details {
+    margin-top: 10px;
+}
+
+.task-item-detail {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.task-item-detail:last-child {
+    border-bottom: none;
+}
+
+.task-item-detail input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.task-item-detail.completed .task-title {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* Seção de Ideias */
+.ideas-header {
+    margin-bottom: 30px;
+}
+
+.add-idea-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.idea-input,
+.idea-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.idea-input:focus,
+.idea-textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.idea-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.ideas-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.idea-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #007bff;
+}
+
+.idea-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.idea-card.implemented {
+    border-left-color: #28a745;
+    opacity: 0.8;
+}
+
+.idea-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.idea-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    margin-right: 15px;
+}
+
+.idea-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.idea-content {
+    margin-top: 15px;
+}
+
+.idea-description {
+    margin: 0 0 15px 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.idea-meta {
+    color: #999;
+    font-size: 12px;
+}
+
+.no-ideas {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    grid-column: 1 / -1;
+    padding: 40px 20px;
+}
+
+/* Melhorias nos botões */
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.table-actions {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .step-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ideas-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .idea-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .idea-title {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .idea-actions {
+        justify-content: flex-end;
+    }
+    
+    .steps-table-container {
+        overflow-x: scroll;
+    }
+    
+    .steps-table {
+        min-width: 600px;
+    }
+}
+
+/* Animações suaves */
+.idea-card,
+.step-row {
+    transition: all 0.2s ease;
+}
+
