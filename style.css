@@ -1456,3 +1456,125 @@ body {
 
 .hidden { display: none; }
 .visible { display: block; }
+
+/* Estilos para filtro do calendário */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.calendar-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.calendar-filter label {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: var(--font-sm);
+}
+
+.calendar-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+/* Estilos para seção de tarefas no modal de etapa */
+.tasks-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    background-color: #f8f9fa;
+}
+
+.add-task-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.add-task-row .task-input {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: var(--font-sm);
+}
+
+.add-task-row .task-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.1);
+}
+
+.tasks-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    background-color: white;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.task-item.completed {
+    opacity: 0.6;
+}
+
+.task-item.completed .task-title {
+    text-decoration: line-through;
+}
+
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.task-title {
+    font-size: var(--font-sm);
+    color: var(--primary-color);
+}
+
+.no-tasks {
+    text-align: center;
+    color: var(--secondary-color);
+    font-style: italic;
+    padding: var(--spacing-md);
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-xs);
+    line-height: 1.2;
+}
+
+/* Responsividade para filtro do calendário */
+@media (max-width: 768px) {
+    .calendar-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .calendar-filter {
+        justify-content: center;
+    }
+    
+    .calendar-navigation {
+        justify-content: center;
+    }
+}
+
