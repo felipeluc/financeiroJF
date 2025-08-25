@@ -1,4 +1,4 @@
-// Verificar autenticação
+// Verificar autenticaçã
 function checkAuth() {
     if (!localStorage.getItem("loggedIn") && !window.location.pathname.endsWith("login.html")) {
         window.location.href = "login.html";
