@@ -1,29 +1,281 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestão de Projetos</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="style.css">
-  <!-- jsPDF e autoTable CDN para geração de PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão de Projetos</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- CDN jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-  <nav id="sidebar">
-    <div class="logo">Gestão de Projetos</div>
-    <button id="menu-dashboard" class="nav-btn active">Dashboard</button>
-    <button id="menu-acompanhar" class="nav-btn">Acompanhar</button>
-    <button id="menu-adicionar" class="nav-btn">Adicionar Projeto</button>
-    <button id="menu-calendario" class="nav-btn">Calendário</button>
-  </nav>
-  <main id="main-content"></main>
+    <!-- Navegação -->
+    <nav class="sidebar" id="sidebar">
+        <div class="nav-header">
+            <h2>Gestão de Projetos</h2>
+            <button class="menu-toggle" id="menuToggle">☰</button>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="#" data-section="dashboard" class="nav-link active">Dashboard</a></li>
+            <li><a href="#" data-section="acompanhar" class="nav-link">Acompanhar</a></li>
+            <li><a href="#" data-section="adicionar" class="nav-link">Adicionar Projeto</a></li>
+            <li><a href="#" data-section="calendario" class="nav-link">Calendário</a></li>
+        </ul>
+    </nav>
 
-  <div id="modal-overlay" style="display:none;">
-    <div id="modal-content"></div>
-  </div>
-  <div id="toast"></div>
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <!-- Dashboard -->
+        <section id="dashboard" class="section active">
+            <h1>Dashboard</h1>
+            <div class="dashboard-cards">
+                <div class="card">
+                    <h3>Total de Projetos</h3>
+                    <span class="card-number" id="totalProjetos">0</span>
+                </div>
+                <div class="card">
+                    <h3>Concluídos</h3>
+                    <span class="card-number" id="projetosConcluidos">0</span>
+                </div>
+                <div class="card">
+                    <h3>Em Andamento</h3>
+                    <span class="card-number" id="projetosAndamento">0</span>
+                </div>
+            </div>
+            
+            <div class="priority-cards">
+                <div class="card priority-alta">
+                    <h3>Prioridade Alta</h3>
+                    <span class="card-number" id="prioridadeAlta">0</span>
+                </div>
+                <div class="card priority-media">
+                    <h3>Prioridade Média</h3>
+                    <span class="card-number" id="prioridadeMedia">0</span>
+                </div>
+                <div class="card priority-leve">
+                    <h3>Prioridade Leve</h3>
+                    <span class="card-number" id="prioridadeLeve">0</span>
+                </div>
+            </div>
 
-  <script src="app.js"></script>
+            <div class="pdf-section">
+                <button class="btn btn-primary" id="gerarPdfBtn">Gerar PDF</button>
+            </div>
+        </section>
+
+        <!-- Acompanhar -->
+        <section id="acompanhar" class="section">
+            <h1>Acompanhar Projetos</h1>
+            <div class="filter-section">
+                <input type="text" id="filtroTexto" placeholder="Buscar por título, descrição ou responsável..." class="filter-input">
+            </div>
+            <div class="projects-list" id="projectsList">
+                <!-- Projetos serão inseridos aqui dinamicamente -->
+            </div>
+        </section>
+
+        <!-- Adicionar Projeto -->
+        <section id="adicionar" class="section">
+            <h1>Adicionar Projeto</h1>
+            <form id="adicionarProjetoForm" class="project-form">
+                <div class="form-group">
+                    <label for="titulo">Título *</label>
+                    <input type="text" id="titulo" name="titulo" required>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" name="descricao" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="responsavel">Responsável</label>
+                    <input type="text" id="responsavel" name="responsavel">
+                </div>
+                <div class="form-group">
+                    <label for="prioridade">Prioridade</label>
+                    <select id="prioridade" name="prioridade">
+                        <option value="alta">Alta</option>
+                        <option value="media">Média</option>
+                        <option value="leve">Leve</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Projeto</button>
+            </form>
+        </section>
+
+        <!-- Calendário -->
+        <section id="calendario" class="section">
+            <h1>Calendário</h1>
+            <div class="calendar-header">
+                <button class="btn btn-secondary" id="mesAnterior">‹ Anterior</button>
+                <h2 id="mesAno">Janeiro 2024</h2>
+                <button class="btn btn-secondary" id="proximoMes">Próximo ›</button>
+            </div>
+            <div class="calendar-container">
+                <table class="calendar" id="calendar">
+                    <thead>
+                        <tr>
+                            <th>Dom</th>
+                            <th>Seg</th>
+                            <th>Ter</th>
+                            <th>Qua</th>
+                            <th>Qui</th>
+                            <th>Sex</th>
+                            <th>Sáb</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendarBody">
+                        <!-- Dias do calendário serão inseridos aqui -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="calendar-events" id="calendarEvents">
+                <h3>Etapas do dia selecionado:</h3>
+                <div id="eventsList">
+                    <p>Selecione um dia para ver as etapas agendadas.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detalhes do Projeto -->
+        <section id="detalhes" class="section">
+            <div class="project-header">
+                <button class="btn btn-secondary" id="voltarAcompanhar">‹ Voltar</button>
+                <div class="project-actions">
+                    <button class="btn btn-primary" id="editarProjetoBtn">Editar</button>
+                    <button class="btn btn-danger" id="removerProjetoBtn">Remover</button>
+                </div>
+            </div>
+            <div class="project-details" id="projectDetails">
+                <!-- Detalhes do projeto serão inseridos aqui -->
+            </div>
+            <div class="steps-section">
+                <div class="steps-header">
+                    <h3>Etapas</h3>
+                    <button class="btn btn-primary" id="adicionarEtapaBtn">Adicionar Etapa</button>
+                </div>
+                <div class="steps-list" id="stepsList">
+                    <!-- Etapas serão inseridas aqui -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Gerar PDF -->
+    <div class="modal" id="pdfModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gerar PDF</h3>
+                <span class="close" id="closePdfModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="pdfOption" value="todos" checked>
+                        Todos os projetos
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="pdfOption" value="especifico">
+                        Projeto específico
+                    </label>
+                    <select id="projetoEspecifico" disabled>
+                        <option value="">Selecione um projeto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarPdf">Cancelar</button>
+                <button class="btn btn-primary" id="confirmarPdf">Gerar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Projeto -->
+    <div class="modal" id="editarProjetoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Projeto</h3>
+                <span class="close" id="closeEditarModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editarProjetoForm">
+                    <div class="form-group">
+                        <label for="editTitulo">Título *</label>
+                        <input type="text" id="editTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescricao">Descrição</label>
+                        <textarea id="editDescricao" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editResponsavel">Responsável</label>
+                        <input type="text" id="editResponsavel">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrioridade">Prioridade</label>
+                        <select id="editPrioridade">
+                            <option value="alta">Alta</option>
+                            <option value="media">Média</option>
+                            <option value="leve">Leve</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarEdicao">Cancelar</button>
+                <button class="btn btn-primary" id="salvarEdicao">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar/Editar Etapa -->
+    <div class="modal" id="etapaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="etapaModalTitle">Adicionar Etapa</h3>
+                <span class="close" id="closeEtapaModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="etapaForm">
+                    <div class="form-group">
+                        <label for="etapaTitulo">Título *</label>
+                        <input type="text" id="etapaTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="etapaResponsavel">Responsável</label>
+                        <input type="text" id="etapaResponsavel">
+                    </div>
+                    <div class="form-group">
+                        <label for="etapaPrazo">Prazo</label>
+                        <input type="date" id="etapaPrazo">
+                    </div>
+                    <div class="form-group">
+                        <label for="etapaObservacao">Observação</label>
+                        <textarea id="etapaObservacao" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="etapaConcluida">
+                            Etapa concluída
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarEtapa">Cancelar</button>
+                <button class="btn btn-primary" id="salvarEtapa">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificação -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
+
