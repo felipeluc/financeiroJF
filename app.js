@@ -8,6 +8,7 @@ class ProjectManager {
         this.dailyTasks = this.loadDailyTasks(); // Nova propriedade para tarefas diárias
         this.calendarFilter = 'etapas'; // Filtro padrão do calendário
         this.currentStepTasks = []; // Tarefas temporárias do modal de etapa
+        this.ideas = this.loadIdeas(); // Nova propriedade para ideias
         
         // Novas propriedades para filtros e paginação
         this.filters = {
@@ -252,6 +253,32 @@ class ProjectManager {
             }
         });
 
+        // Modal de detalhes da etapa
+        document.getElementById('closeStepDetailsModal').addEventListener('click', () => {
+            this.hideStepDetailsModal();
+        });
+
+        document.getElementById('closeStepDetails').addEventListener('click', () => {
+            this.hideStepDetailsModal();
+        });
+
+        document.getElementById('editStepFromDetails').addEventListener('click', () => {
+            const stepId = document.getElementById('stepDetailsModal').dataset.stepId;
+            this.hideStepDetailsModal();
+            this.showStepModal(stepId);
+        });
+
+        // Ideias
+        document.getElementById('addIdeaBtn').addEventListener('click', () => {
+            this.addIdea();
+        });
+
+        document.getElementById('newIdeaTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addIdea();
+            }
+        });
+
         // Fechar modais clicando fora
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
@@ -301,6 +328,8 @@ class ProjectManager {
             this.renderProjects();
         } else if (sectionName === 'calendario') {
             this.renderCalendar();
+        } else if (sectionName === 'ideias') {
+            this.renderIdeas();
         }
     }
 
@@ -585,38 +614,38 @@ class ProjectManager {
     }
 
     renderProjectSteps() {
-        const container = document.getElementById('stepsList');
+        const tableBody = document.getElementById('stepsTableBody');
         const project = this.currentProject;
 
         if (project.etapas.length === 0) {
-            container.innerHTML = '<p>Nenhuma etapa adicionada ainda.</p>';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhuma etapa adicionada ainda.</td></tr>';
             return;
         }
 
-        container.innerHTML = project.etapas.map(step => `
-            <div class="step-card ${step.concluida ? 'completed' : ''}">
-                <div class="step-card-header">
-                    <div>
-                        <div class="step-title">${step.titulo}</div>
-                        <div class="step-meta">
-                            <div><strong>Responsável:</strong> ${step.responsavel || 'Não informado'}</div>
-                            <div><strong>Prazo:</strong> ${step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido'}</div>
-                            ${step.link ? `<div><strong>Link:</strong> <a href="${step.link}" target="_blank">${step.link}</a></div>` : ''}
+        tableBody.innerHTML = project.etapas.map(step => {
+            const prazoFormatado = step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido';
+            const statusText = step.concluida ? 'Concluída' : 'Pendente';
+            const statusClass = step.concluida ? 'status-completed' : 'status-pending';
+            const tasksCount = step.tarefas ? step.tarefas.length : 0;
+            const completedTasks = step.tarefas ? step.tarefas.filter(t => t.concluida).length : 0;
+            const tasksText = tasksCount > 0 ? `${completedTasks}/${tasksCount}` : '0';
+
+            return `
+                <tr onclick="projectManager.showStepDetails('${step.id}')" style="cursor: pointer;" class="step-row ${step.concluida ? 'completed-row' : ''}">
+                    <td>${step.titulo}</td>
+                    <td>${step.responsavel || 'Não informado'}</td>
+                    <td>${prazoFormatado}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${tasksText}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); projectManager.editStep('${step.id}')">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); projectManager.removeStep('${step.id}')">Remover</button>
                         </div>
-                        ${step.observacao ? `<div class="step-observation">${step.observacao}</div>` : ''}
-                    </div>
-                    <div class="step-actions">
-                        <button class="btn btn-secondary" onclick="projectManager.editStep('${step.id}')">Editar</button>
-                        <button class="btn btn-danger" onclick="projectManager.removeStep('${step.id}')">Remover</button>
-                    </div>
-                </div>
-                <div class="step-checkbox">
-                    <input type="checkbox" ${step.concluida ? 'checked' : ''} 
-                           onchange="projectManager.toggleStepCompletion('${step.id}')">
-                    <label>Etapa concluída</label>
-                </div>
-            </div>
-        `).join('');
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     // Gerenciamento de Etapas
@@ -773,6 +802,181 @@ class ProjectManager {
         this.saveProjects();
         this.renderProjectDetails();
         this.renderProjectSteps();
+    }
+
+    // Detalhes da Etapa
+    showStepDetails(stepId) {
+        const step = this.currentProject.etapas.find(s => s.id === stepId);
+        if (!step) return;
+
+        const modal = document.getElementById('stepDetailsModal');
+        const title = document.getElementById('stepDetailsTitle');
+        const content = document.getElementById('stepDetailsContent');
+
+        title.textContent = `Detalhes: ${step.titulo}`;
+
+        const prazoFormatado = step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido';
+        const tasksCount = step.tarefas ? step.tarefas.length : 0;
+        const completedTasks = step.tarefas ? step.tarefas.filter(t => t.concluida).length : 0;
+
+        content.innerHTML = `
+            <div class="step-details-grid">
+                <div class="detail-item">
+                    <h4>Título</h4>
+                    <p>${step.titulo}</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Responsável</h4>
+                    <p>${step.responsavel || 'Não informado'}</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Prazo</h4>
+                    <p>${prazoFormatado}</p>
+                </div>
+                <div class="detail-item">
+                    <h4>Status</h4>
+                    <p><span class="status-badge ${step.concluida ? 'status-completed' : 'status-pending'}">${step.concluida ? 'Concluída' : 'Pendente'}</span></p>
+                </div>
+                ${step.link ? `
+                    <div class="detail-item">
+                        <h4>Link</h4>
+                        <p><a href="${step.link}" target="_blank">${step.link}</a></p>
+                    </div>
+                ` : ''}
+                ${step.observacao ? `
+                    <div class="detail-item full-width">
+                        <h4>Observações</h4>
+                        <p>${step.observacao}</p>
+                    </div>
+                ` : ''}
+                ${tasksCount > 0 ? `
+                    <div class="detail-item full-width">
+                        <h4>Tarefas (${completedTasks}/${tasksCount} concluídas)</h4>
+                        <div class="tasks-list-details">
+                            ${step.tarefas.map(task => `
+                                <div class="task-item-detail ${task.concluida ? 'completed' : ''}">
+                                    <input type="checkbox" ${task.concluida ? 'checked' : ''} 
+                                           onchange="projectManager.toggleTaskCompletion('${stepId}', '${task.id}')">
+                                    <span class="task-title">${task.titulo}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        // Armazenar o ID da etapa para edição
+        modal.dataset.stepId = stepId;
+        modal.classList.add('show');
+    }
+
+    hideStepDetailsModal() {
+        document.getElementById('stepDetailsModal').classList.remove('show');
+    }
+
+    toggleTaskCompletion(stepId, taskId) {
+        const step = this.currentProject.etapas.find(s => s.id === stepId);
+        const task = step.tarefas.find(t => t.id === taskId);
+        task.concluida = !task.concluida;
+        this.saveProjects();
+        this.renderProjectSteps();
+        // Atualizar o modal se estiver aberto
+        if (document.getElementById('stepDetailsModal').classList.contains('show')) {
+            this.showStepDetails(stepId);
+        }
+    }
+
+    // Gerenciamento de Ideias
+    loadIdeas() {
+        const saved = localStorage.getItem('project-ideas');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveIdeas() {
+        localStorage.setItem('project-ideas', JSON.stringify(this.ideas));
+    }
+
+    addIdea() {
+        const titleInput = document.getElementById('newIdeaTitle');
+        const descriptionInput = document.getElementById('newIdeaDescription');
+        
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        if (!title) {
+            this.showToast('Título da ideia é obrigatório!', 'warning');
+            return;
+        }
+
+        const newIdea = {
+            id: this.generateId(),
+            titulo: title,
+            descricao: description,
+            dataCriacao: new Date().toISOString(),
+            implementada: false
+        };
+
+        this.ideas.push(newIdea);
+        this.saveIdeas();
+        this.renderIdeas();
+        
+        // Limpar campos
+        titleInput.value = '';
+        descriptionInput.value = '';
+        
+        this.showToast('Ideia adicionada com sucesso!');
+    }
+
+    renderIdeas() {
+        const container = document.getElementById('ideasContainer');
+        
+        if (this.ideas.length === 0) {
+            container.innerHTML = '<p class="no-ideas">Nenhuma ideia adicionada ainda. Que tal começar com uma nova ideia?</p>';
+            return;
+        }
+
+        container.innerHTML = this.ideas.map(idea => {
+            const creationDate = new Date(idea.dataCriacao).toLocaleDateString('pt-BR');
+            
+            return `
+                <div class="idea-card ${idea.implementada ? 'implemented' : ''}">
+                    <div class="idea-header">
+                        <h3 class="idea-title">${idea.titulo}</h3>
+                        <div class="idea-actions">
+                            <button class="btn btn-sm ${idea.implementada ? 'btn-secondary' : 'btn-success'}" 
+                                    onclick="projectManager.toggleIdeaImplementation('${idea.id}')">
+                                ${idea.implementada ? 'Implementada' : 'Marcar como Implementada'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="projectManager.removeIdea('${idea.id}')">×</button>
+                        </div>
+                    </div>
+                    <div class="idea-content">
+                        <p class="idea-description">${idea.descricao || 'Sem descrição'}</p>
+                        <div class="idea-meta">
+                            <small>Criada em: ${creationDate}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    toggleIdeaImplementation(ideaId) {
+        const idea = this.ideas.find(i => i.id === ideaId);
+        idea.implementada = !idea.implementada;
+        this.saveIdeas();
+        this.renderIdeas();
+        this.showToast(idea.implementada ? 'Ideia marcada como implementada!' : 'Ideia desmarcada como implementada!');
+    }
+
+    removeIdea(ideaId) {
+        if (confirm('Tem certeza que deseja remover esta ideia?')) {
+            this.ideas = this.ideas.filter(i => i.id !== ideaId);
+            this.saveIdeas();
+            this.renderIdeas();
+            this.showToast('Ideia removida com sucesso!');
+        }
     }
 
     // Dashboard
@@ -1628,3 +1832,4 @@ window.projectManager = {
     toggleTaskCompletion: (id) => projectManager.toggleTaskCompletion(id),
     removeTask: (id) => projectManager.removeTask(id)
 };
+
