@@ -24,9 +24,12 @@ class ProjectManager {
         
         this.projects = this.loadProjects();
         this.currentProject = null;
+        this.currentIdea = null;
         this.currentDate = new Date();
         this.selectedDate = null;
-        this.dailyTasks = this.loadDailyTasks(); // Nova propriedade para tarefas diárias
+        this.dailyTasks = this.loadDailyTasks();
+        this.richTextEditor = null;
+        this.currentRichTextField = null;
         
         // Novas propriedades para filtros e paginação
         this.filters = {
@@ -44,7 +47,7 @@ class ProjectManager {
             pageSize: 10,
             totalPages: 1
         };
-        this.currentView = 'cards'; // 'cards' ou 'table'
+        this.currentView = 'cards';
         this.filteredProjects = [];
         
         this.init();
@@ -121,6 +124,19 @@ class ProjectManager {
             this.saveProjectEdit();
         });
 
+        // Modal ideia
+        document.getElementById('closeIdeiaModal').addEventListener('click', () => {
+            this.hideIdeaModal();
+        });
+
+        document.getElementById('cancelarIdeia').addEventListener('click', () => {
+            this.hideIdeaModal();
+        });
+
+        document.getElementById('salvarIdeia').addEventListener('click', () => {
+            this.saveIdea();
+        });
+
         // Modal etapa
         document.getElementById('closeEtapaModal').addEventListener('click', () => {
             this.hideStepModal();
@@ -132,6 +148,19 @@ class ProjectManager {
 
         document.getElementById('salvarEtapa').addEventListener('click', () => {
             this.saveStep();
+        });
+
+        // Modal editor de texto rico
+        document.getElementById('closeRichTextModal').addEventListener('click', () => {
+            this.hideRichTextModal();
+        });
+
+        document.getElementById('cancelarRichText').addEventListener('click', () => {
+            this.hideRichTextModal();
+        });
+
+        document.getElementById('salvarRichText').addEventListener('click', () => {
+            this.saveRichText();
         });
 
         // Detalhes do projeto
@@ -148,8 +177,8 @@ class ProjectManager {
             this.removeProject();
         });
 
-        document.getElementById('adicionarEtapaBtn').addEventListener('click', () => {
-            this.showStepModal();
+        document.getElementById('adicionarIdeiaBtn').addEventListener('click', () => {
+            this.showIdeaModal();
         });
 
         // Filtros básicos
@@ -277,6 +306,87 @@ class ProjectManager {
                 });
             }
         });
+    }
+
+    // Editor de Texto Rico
+    openRichTextEditor(element) {
+        this.currentRichTextField = element;
+        const fieldId = element.dataset.field;
+        const contentElement = element.querySelector('.rich-text-content');
+        const currentContent = contentElement.innerHTML;
+        
+        // Mostrar modal
+        document.getElementById('richTextModal').classList.add('show');
+        
+        // Inicializar TinyMCE
+        tinymce.init({
+            selector: '#richTextEditor',
+            height: 400,
+            menubar: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic forecolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; font-size: 14px }',
+            setup: (editor) => {
+                this.richTextEditor = editor;
+                editor.on('init', () => {
+                    // Carregar conteúdo existente
+                    if (currentContent && !currentContent.includes('Clique aqui')) {
+                        editor.setContent(currentContent);
+                    }
+                });
+            }
+        });
+    }
+
+    saveRichText() {
+        if (this.richTextEditor && this.currentRichTextField) {
+            const content = this.richTextEditor.getContent();
+            const contentElement = this.currentRichTextField.querySelector('.rich-text-content');
+            const hiddenInput = this.currentRichTextField.parentNode.querySelector('input[type="hidden"]');
+            
+            if (content.trim()) {
+                contentElement.innerHTML = content;
+                contentElement.classList.add('has-content');
+                if (hiddenInput) {
+                    hiddenInput.value = content;
+                }
+            } else {
+                const placeholder = this.getPlaceholderText(this.currentRichTextField.dataset.field);
+                contentElement.innerHTML = placeholder;
+                contentElement.classList.remove('has-content');
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
+            }
+            
+            this.hideRichTextModal();
+        }
+    }
+
+    hideRichTextModal() {
+        document.getElementById('richTextModal').classList.remove('show');
+        if (this.richTextEditor) {
+            tinymce.remove('#richTextEditor');
+            this.richTextEditor = null;
+        }
+        this.currentRichTextField = null;
+    }
+
+    getPlaceholderText(fieldId) {
+        const placeholders = {
+            'descricao': 'Clique aqui para adicionar uma descrição detalhada...',
+            'editDescricao': 'Clique aqui para editar a descrição...',
+            'ideiaDescricao': 'Clique aqui para adicionar uma descrição da ideia...',
+            'etapaObservacao': 'Clique aqui para adicionar observações...'
+        };
+        return placeholders[fieldId] || 'Clique aqui para editar...';
     }
 
     // Navegação SPA
@@ -497,15 +607,20 @@ class ProjectManager {
         const form = document.getElementById('adicionarProjetoForm');
         const formData = new FormData(form);
         
+        // Obter descrição do campo rico
+        const descricaoContent = document.getElementById('descricaoContent');
+        const descricao = descricaoContent.classList.contains('has-content') ? 
+            descricaoContent.innerHTML : '';
+
         const project = {
             id: this.generateId(),
             titulo: formData.get('titulo'),
-            descricao: formData.get('descricao'),
+            descricao: descricao,
             responsavel: formData.get('responsavel'),
             prioridade: formData.get('prioridade'),
             dataCriacao: new Date().toISOString(),
-            dataEntrega: formData.get('dataEntrega') || null, // Novo campo
-            etapas: []
+            dataEntrega: formData.get('dataEntrega') || null,
+            ideias: []
         };
 
         this.projects.push(project);
@@ -513,6 +628,10 @@ class ProjectManager {
         this.showToast('Projeto adicionado com sucesso!');
         
         form.reset();
+        // Resetar campo de texto rico
+        descricaoContent.innerHTML = 'Clique aqui para adicionar uma descrição detalhada...';
+        descricaoContent.classList.remove('has-content');
+        
         this.showSection('acompanhar');
         this.setActiveNav(document.querySelector('[data-section="acompanhar"]'));
     }
@@ -534,7 +653,7 @@ class ProjectManager {
         if (!this.currentProject) return;
 
         this.renderProjectDetails();
-        this.renderProjectSteps();
+        this.renderProjectIdeas();
         this.showSection('detalhes');
     }
 
@@ -571,7 +690,7 @@ class ProjectManager {
             </div>
             <div class="info-item">
                 <h4>Descrição</h4>
-                <p>${project.descricao || 'Sem descrição'}</p>
+                <div class="rich-text-content has-content">${project.descricao || 'Sem descrição'}</div>
             </div>
             <div class="info-item">
                 <h4>Progresso</h4>
@@ -583,60 +702,185 @@ class ProjectManager {
         `;
     }
 
-    renderProjectSteps() {
-        const container = document.getElementById('stepsList');
+    renderProjectIdeas() {
+        const container = document.getElementById('ideasList');
         const project = this.currentProject;
 
-        if (project.etapas.length === 0) {
-            container.innerHTML = '<p>Nenhuma etapa adicionada ainda.</p>';
+        if (project.ideias.length === 0) {
+            container.innerHTML = '<p>Nenhuma ideia adicionada ainda.</p>';
             return;
         }
 
-        container.innerHTML = project.etapas.map(step => `
-            <div class="step-card ${step.concluida ? 'completed' : ''}">
-                <div class="step-card-header">
+        container.innerHTML = project.ideias.map(idea => `
+            <div class="idea-card">
+                <div class="idea-card-header">
                     <div>
-                        <div class="step-title">${step.titulo}</div>
-                        <div class="step-meta">
-                            <div><strong>Responsável:</strong> ${step.responsavel || 'Não informado'}</div>
-                            <div><strong>Prazo:</strong> ${step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido'}</div>
-                            ${step.link ? `<div><strong>Link:</strong> <a href="${step.link}" target="_blank">${step.link}</a></div>` : ''}
-                        </div>
-                        ${step.observacao ? `<div class="step-observation">${step.observacao}</div>` : ''}
+                        <div class="idea-title">${idea.titulo}</div>
+                        <div class="idea-description">${idea.descricao || 'Sem descrição'}</div>
                     </div>
-                    <div class="step-actions">
-                        <button class="btn btn-secondary" onclick="projectManager.editStep('${step.id}')">Editar</button>
-                        <button class="btn btn-danger" onclick="projectManager.removeStep('${step.id}')">Remover</button>
+                    <div class="idea-actions">
+                        <button class="btn btn-secondary" onclick="projectManager.editIdea('${idea.id}')">Editar</button>
+                        <button class="btn btn-danger" onclick="projectManager.removeIdea('${idea.id}')">Remover</button>
                     </div>
                 </div>
-                <div class="step-checkbox">
-                    <input type="checkbox" ${step.concluida ? 'checked' : ''} 
-                           onchange="projectManager.toggleStepCompletion('${step.id}')">
-                    <label>Etapa concluída</label>
+                <div class="idea-steps">
+                    <div class="idea-steps-header">
+                        <h4>Etapas (${idea.etapas.length})</h4>
+                        <button class="btn btn-primary" onclick="projectManager.showStepModal(null, '${idea.id}')">Adicionar Etapa</button>
+                    </div>
+                    ${idea.etapas.length > 0 ? idea.etapas.map(step => `
+                        <div class="step-card ${step.concluida ? 'completed' : ''}">
+                            <div class="step-card-header">
+                                <div>
+                                    <div class="step-title">${step.titulo}</div>
+                                    <div class="step-meta">
+                                        <div><strong>Responsável:</strong> ${step.responsavel || 'Não informado'}</div>
+                                        <div><strong>Prazo:</strong> ${step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'Não definido'}</div>
+                                        ${step.link ? `<div><strong>Link:</strong> <a href="${step.link}" target="_blank">${step.link}</a></div>` : ''}
+                                    </div>
+                                    ${step.observacao ? `<div class="step-observation">${step.observacao}</div>` : ''}
+                                </div>
+                                <div class="step-actions">
+                                    <button class="btn btn-secondary" onclick="projectManager.editStep('${step.id}', '${idea.id}')">Editar</button>
+                                    <button class="btn btn-danger" onclick="projectManager.removeStep('${step.id}', '${idea.id}')">Remover</button>
+                                </div>
+                            </div>
+                            <div class="step-checkbox">
+                                <input type="checkbox" ${step.concluida ? 'checked' : ''} 
+                                       onchange="projectManager.toggleStepCompletion('${step.id}', '${idea.id}')">
+                                <label>Etapa concluída</label>
+                            </div>
+                        </div>
+                    `).join('') : '<p>Nenhuma etapa adicionada ainda.</p>'}
                 </div>
             </div>
         `).join('');
     }
 
+    // Gerenciamento de Ideias
+    showIdeaModal(ideaId = null) {
+        const modal = document.getElementById('ideiaModal');
+        const title = document.getElementById('ideiaModalTitle');
+        const descricaoField = document.getElementById('ideiaDescricao');
+        const descricaoContent = document.getElementById('ideiaDescricaoContent');
+        
+        if (ideaId) {
+            const idea = this.currentProject.ideias.find(i => i.id === ideaId);
+            title.textContent = 'Editar Ideia';
+            document.getElementById('ideiaTitulo').value = idea.titulo;
+            
+            if (idea.descricao) {
+                descricaoContent.innerHTML = idea.descricao;
+                descricaoContent.classList.add('has-content');
+            } else {
+                descricaoContent.innerHTML = 'Clique aqui para adicionar uma descrição da ideia...';
+                descricaoContent.classList.remove('has-content');
+            }
+            
+            modal.dataset.ideaId = ideaId;
+        } else {
+            title.textContent = 'Adicionar Ideia';
+            document.getElementById('ideiaForm').reset();
+            descricaoContent.innerHTML = 'Clique aqui para adicionar uma descrição da ideia...';
+            descricaoContent.classList.remove('has-content');
+            delete modal.dataset.ideaId;
+        }
+
+        modal.classList.add('show');
+    }
+
+    hideIdeaModal() {
+        document.getElementById('ideiaModal').classList.remove('show');
+    }
+
+    saveIdea() {
+        const modal = document.getElementById('ideiaModal');
+        const ideaId = modal.dataset.ideaId;
+        const descricaoContent = document.getElementById('ideiaDescricaoContent');
+        
+        const ideaData = {
+            titulo: document.getElementById('ideiaTitulo').value,
+            descricao: descricaoContent.classList.contains('has-content') ? 
+                descricaoContent.innerHTML : ''
+        };
+
+        if (!ideaData.titulo.trim()) {
+            this.showToast('Título da ideia é obrigatório!', 'error');
+            return;
+        }
+
+        if (ideaId) {
+            // Editar ideia existente
+            const ideaIndex = this.currentProject.ideias.findIndex(i => i.id === ideaId);
+            this.currentProject.ideias[ideaIndex] = { 
+                ...this.currentProject.ideias[ideaIndex], 
+                ...ideaData 
+            };
+            this.showToast('Ideia atualizada com sucesso!');
+        } else {
+            // Adicionar nova ideia
+            const newIdea = {
+                id: this.generateId(),
+                ...ideaData,
+                etapas: []
+            };
+            this.currentProject.ideias.push(newIdea);
+            this.showToast('Ideia adicionada com sucesso!');
+        }
+
+        this.saveProjects();
+        this.renderProjectDetails();
+        this.renderProjectIdeas();
+        this.hideIdeaModal();
+    }
+
+    editIdea(ideaId) {
+        this.showIdeaModal(ideaId);
+    }
+
+    removeIdea(ideaId) {
+        if (confirm('Tem certeza que deseja remover esta ideia e todas as suas etapas?')) {
+            this.currentProject.ideias = this.currentProject.ideias.filter(i => i.id !== ideaId);
+            this.saveProjects();
+            this.renderProjectDetails();
+            this.renderProjectIdeas();
+            this.showToast('Ideia removida com sucesso!');
+        }
+    }
+
     // Gerenciamento de Etapas
-    showStepModal(stepId = null) {
+    showStepModal(stepId = null, ideaId = null) {
         const modal = document.getElementById('etapaModal');
         const title = document.getElementById('etapaModalTitle');
+        const observacaoContent = document.getElementById('etapaObservacaoContent');
         
-        if (stepId) {
-            const step = this.currentProject.etapas.find(s => s.id === stepId);
+        if (stepId && ideaId) {
+            const idea = this.currentProject.ideias.find(i => i.id === ideaId);
+            const step = idea.etapas.find(s => s.id === stepId);
             title.textContent = 'Editar Etapa';
             document.getElementById('etapaTitulo').value = step.titulo;
             document.getElementById('etapaResponsavel').value = step.responsavel || '';
             document.getElementById('etapaPrazo').value = step.prazo || '';
-            document.getElementById('etapaLink').value = step.link || ''; // Novo campo
-            document.getElementById('etapaObservacao').value = step.observacao || '';
+            document.getElementById('etapaLink').value = step.link || '';
+            
+            if (step.observacao) {
+                observacaoContent.innerHTML = step.observacao;
+                observacaoContent.classList.add('has-content');
+            } else {
+                observacaoContent.innerHTML = 'Clique aqui para adicionar observações...';
+                observacaoContent.classList.remove('has-content');
+            }
+            
             document.getElementById('etapaConcluida').checked = step.concluida;
             modal.dataset.stepId = stepId;
+            modal.dataset.ideaId = ideaId;
         } else {
             title.textContent = 'Adicionar Etapa';
             document.getElementById('etapaForm').reset();
+            observacaoContent.innerHTML = 'Clique aqui para adicionar observações...';
+            observacaoContent.classList.remove('has-content');
             delete modal.dataset.stepId;
+            modal.dataset.ideaId = ideaId;
         }
 
         modal.classList.add('show');
@@ -649,25 +893,30 @@ class ProjectManager {
     saveStep() {
         const modal = document.getElementById('etapaModal');
         const stepId = modal.dataset.stepId;
+        const ideaId = modal.dataset.ideaId;
+        const observacaoContent = document.getElementById('etapaObservacaoContent');
         
         const stepData = {
             titulo: document.getElementById('etapaTitulo').value,
             responsavel: document.getElementById('etapaResponsavel').value,
             prazo: document.getElementById('etapaPrazo').value,
-            link: document.getElementById('etapaLink').value, // Novo campo
-            observacao: document.getElementById('etapaObservacao').value,
+            link: document.getElementById('etapaLink').value,
+            observacao: observacaoContent.classList.contains('has-content') ? 
+                observacaoContent.innerHTML : '',
             concluida: document.getElementById('etapaConcluida').checked
         };
 
         if (!stepData.titulo.trim()) {
-            this.showToast('Título da etapa é obrigatório!');
+            this.showToast('Título da etapa é obrigatório!', 'error');
             return;
         }
 
+        const idea = this.currentProject.ideias.find(i => i.id === ideaId);
+        
         if (stepId) {
             // Editar etapa existente
-            const stepIndex = this.currentProject.etapas.findIndex(s => s.id === stepId);
-            this.currentProject.etapas[stepIndex] = { ...this.currentProject.etapas[stepIndex], ...stepData };
+            const stepIndex = idea.etapas.findIndex(s => s.id === stepId);
+            idea.etapas[stepIndex] = { ...idea.etapas[stepIndex], ...stepData };
             this.showToast('Etapa atualizada com sucesso!');
         } else {
             // Adicionar nova etapa
@@ -675,36 +924,38 @@ class ProjectManager {
                 id: this.generateId(),
                 ...stepData
             };
-            this.currentProject.etapas.push(newStep);
+            idea.etapas.push(newStep);
             this.showToast('Etapa adicionada com sucesso!');
         }
 
         this.saveProjects();
         this.renderProjectDetails();
-        this.renderProjectSteps();
+        this.renderProjectIdeas();
         this.hideStepModal();
     }
 
-    editStep(stepId) {
-        this.showStepModal(stepId);
+    editStep(stepId, ideaId) {
+        this.showStepModal(stepId, ideaId);
     }
 
-    removeStep(stepId) {
+    removeStep(stepId, ideaId) {
         if (confirm('Tem certeza que deseja remover esta etapa?')) {
-            this.currentProject.etapas = this.currentProject.etapas.filter(s => s.id !== stepId);
+            const idea = this.currentProject.ideias.find(i => i.id === ideaId);
+            idea.etapas = idea.etapas.filter(s => s.id !== stepId);
             this.saveProjects();
             this.renderProjectDetails();
-            this.renderProjectSteps();
+            this.renderProjectIdeas();
             this.showToast('Etapa removida com sucesso!');
         }
     }
 
-    toggleStepCompletion(stepId) {
-        const step = this.currentProject.etapas.find(s => s.id === stepId);
+    toggleStepCompletion(stepId, ideaId) {
+        const idea = this.currentProject.ideias.find(i => i.id === ideaId);
+        const step = idea.etapas.find(s => s.id === stepId);
         step.concluida = !step.concluida;
         this.saveProjects();
         this.renderProjectDetails();
-        this.renderProjectSteps();
+        this.renderProjectIdeas();
     }
 
     // Dashboard
@@ -750,15 +1001,15 @@ class ProjectManager {
             const progress = this.calculateProgress(project);
             const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
             const deliveryDate = project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
-            const visibleSteps = project.etapas.slice(0, 2);
-            const hasMoreSteps = project.etapas.length > 2;
+            const visibleIdeas = project.ideias.slice(0, 2);
+            const hasMoreIdeas = project.ideias.length > 2;
 
             return `
                 <div class="project-card" onclick="projectManager.showProjectDetails('${project.id}')">
                     <div class="project-card-header">
                         <div>
                             <div class="project-title">${project.titulo}</div>
-                            <div class="project-description">${project.descricao || 'Sem descrição'}</div>
+                            <div class="project-description">${this.stripHtml(project.descricao) || 'Sem descrição'}</div>
                         </div>
                         <span class="priority-badge ${project.prioridade}">${project.prioridade.toUpperCase()}</span>
                     </div>
@@ -771,18 +1022,17 @@ class ProjectManager {
                         <div class="progress-fill" style="width: ${progress}%"></div>
                     </div>
                     <div class="progress-text">${progress}% concluído</div>
-                    ${visibleSteps.length > 0 ? `
+                    ${visibleIdeas.length > 0 ? `
                         <div class="project-steps">
-                            <h4>Próximas etapas:</h4>
-                            ${visibleSteps.map(step => `
-                                <div class="step-item ${step.concluida ? 'completed' : ''}">
-                                    <input type="checkbox" ${step.concluida ? 'checked' : ''} disabled>
-                                    ${step.titulo}
+                            <h4>Próximas ideias:</h4>
+                            ${visibleIdeas.map(idea => `
+                                <div class="step-item">
+                                    ${idea.titulo} (${idea.etapas.length} etapas)
                                 </div>
                             `).join('')}
-                            ${hasMoreSteps ? `
+                            ${hasMoreIdeas ? `
                                 <button class="expand-steps" onclick="event.stopPropagation(); projectManager.showProjectDetails('${project.id}')">
-                                    Ver todas as ${project.etapas.length} etapas
+                                    Ver todas as ${project.ideias.length} ideias
                                 </button>
                             ` : ''}
                         </div>
@@ -803,7 +1053,7 @@ class ProjectManager {
         const projects = this.getPaginatedProjects();
         
         if (projects.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum projeto encontrado com os filtros aplicados.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhum projeto encontrado com os filtros aplicados.</td></tr>';
             return;
         }
 
@@ -859,11 +1109,21 @@ class ProjectManager {
         if (!this.currentProject) return;
 
         const project = this.currentProject;
+        const descricaoContent = document.getElementById('editDescricaoContent');
+        
         document.getElementById('editTitulo').value = project.titulo;
-        document.getElementById('editDescricao').value = project.descricao || '';
+        
+        if (project.descricao) {
+            descricaoContent.innerHTML = project.descricao;
+            descricaoContent.classList.add('has-content');
+        } else {
+            descricaoContent.innerHTML = 'Clique aqui para editar a descrição...';
+            descricaoContent.classList.remove('has-content');
+        }
+        
         document.getElementById('editResponsavel').value = project.responsavel || '';
         document.getElementById('editPrioridade').value = project.prioridade;
-        document.getElementById('editDataEntrega').value = project.dataEntrega || ''; // Novo campo
+        document.getElementById('editDataEntrega').value = project.dataEntrega || '';
 
         document.getElementById('editarProjetoModal').classList.add('show');
     }
@@ -873,132 +1133,120 @@ class ProjectManager {
     }
 
     saveProjectEdit() {
+        const descricaoContent = document.getElementById('editDescricaoContent');
+        
         const updatedData = {
             titulo: document.getElementById('editTitulo').value,
-            descricao: document.getElementById('editDescricao').value,
+            descricao: descricaoContent.classList.contains('has-content') ? 
+                descricaoContent.innerHTML : '',
             responsavel: document.getElementById('editResponsavel').value,
             prioridade: document.getElementById('editPrioridade').value,
-            dataEntrega: document.getElementById('editDataEntrega').value || null // Novo campo
+            dataEntrega: document.getElementById('editDataEntrega').value
         };
 
         if (!updatedData.titulo.trim()) {
-            this.showToast('Título do projeto é obrigatório!');
+            this.showToast('Título do projeto é obrigatório!', 'error');
             return;
         }
 
         Object.assign(this.currentProject, updatedData);
         this.saveProjects();
+        this.showToast('Projeto atualizado com sucesso!');
         this.renderProjectDetails();
         this.hideEditModal();
-        this.showToast('Projeto atualizado com sucesso!');
     }
 
     // Calendário
     renderCalendar() {
+        const calendarBody = document.getElementById('calendarBody');
+        const monthYear = document.getElementById('mesAno');
+        
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
         
-        // Atualizar título
-        const monthNames = [
-            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ];
-        document.getElementById('mesAno').textContent = `${monthNames[month]} ${year}`;
+        monthYear.textContent = new Date(year, month).toLocaleDateString('pt-BR', { 
+            month: 'long', 
+            year: 'numeric' 
+        });
 
-        // Calcular dias do mês
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-        const calendarBody = document.getElementById('calendarBody');
-        calendarBody.innerHTML = '';
+        let html = '';
+        let currentWeek = startDate;
 
-        // Gerar 6 semanas
         for (let week = 0; week < 6; week++) {
-            const row = document.createElement('tr');
-            
+            html += '<tr>';
             for (let day = 0; day < 7; day++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + (week * 7) + day);
-                
-                const cell = document.createElement('td');
-                cell.textContent = currentDate.getDate();
-                
-                // Classes CSS
-                const isCurrentMonth = currentDate.getMonth() === month;
-                const isToday = this.isToday(currentDate);
-                const isSelected = this.selectedDate && this.isSameDate(currentDate, this.selectedDate);
-                
-                if (!isCurrentMonth) {
-                    cell.classList.add('other-month');
-                }
-                if (isToday) {
-                    cell.classList.add('today');
-                }
-                if (isSelected) {
-                    cell.classList.add('selected');
-                }
-                
-                // Verificar se há eventos neste dia
-                if (this.hasEventsOnDate(currentDate)) {
-                    cell.classList.add('has-events');
-                }
-                
-                // Event listeners
-                cell.addEventListener('click', () => {
-                    this.selectDate(currentDate);
-                });
-                
-                // Tooltip para eventos
-                const events = this.getEventsForDate(currentDate);
-                if (events.length > 0) {
-                    cell.addEventListener('mouseenter', (e) => {
-                        this.showTooltip(e, currentDate, events);
-                    });
-                    
-                    cell.addEventListener('mouseleave', () => {
-                        this.hideTooltip();
-                    });
-                }
-                
-                row.appendChild(cell);
+                const currentDay = new Date(currentWeek);
+                const isCurrentMonth = currentDay.getMonth() === month;
+                const isToday = this.isToday(currentDay);
+                const isSelected = this.selectedDate && this.isSameDay(currentDay, this.selectedDate);
+                const hasEvents = this.hasEventsOnDate(currentDay);
+
+                let classes = [];
+                if (!isCurrentMonth) classes.push('other-month');
+                if (isToday) classes.push('today');
+                if (isSelected) classes.push('selected');
+                if (hasEvents) classes.push('has-events');
+
+                html += `
+                    <td class="${classes.join(' ')}" 
+                        onclick="projectManager.selectDate('${currentDay.toISOString()}')"
+                        onmouseenter="projectManager.showCalendarTooltip(event, '${currentDay.toISOString()}')"
+                        onmouseleave="projectManager.hideTooltip()">
+                        ${currentDay.getDate()}
+                    </td>
+                `;
+                currentWeek.setDate(currentWeek.getDate() + 1);
             }
-            
-            calendarBody.appendChild(row);
+            html += '</tr>';
         }
-        
-        // Renderizar eventos do dia selecionado
+
+        calendarBody.innerHTML = html;
         this.renderCalendarEvents();
         this.renderDailyTasks();
     }
 
     isToday(date) {
         const today = new Date();
-        return date.getDate() === today.getDate() &&
-               date.getMonth() === today.getMonth() &&
-               date.getFullYear() === today.getFullYear();
+        return this.isSameDay(date, today);
     }
 
-    isSameDate(date1, date2) {
+    isSameDay(date1, date2) {
         return date1.getDate() === date2.getDate() &&
                date1.getMonth() === date2.getMonth() &&
                date1.getFullYear() === date2.getFullYear();
     }
 
-    getEventsForDate(date) {
+    showCalendarTooltip(event, dateString) {
+        const date = new Date(dateString);
+        const steps = this.getStepsForDate(date);
+        
+        if (steps.length > 0) {
+            this.showTooltip(event, date, steps);
+        }
+    }
+
+    getStepsForDate(date) {
         const dateString = date.toISOString().split('T')[0];
         const events = [];
 
         this.projects.forEach(project => {
-            project.etapas.forEach(step => {
-                if (step.prazo && step.prazo.startsWith(dateString)) {
-                    events.push({
-                        step,
-                        projectId: project.id,
-                        projectTitle: project.titulo
-                    });
-                }
+            project.ideias.forEach(idea => {
+                idea.etapas.forEach(step => {
+                    if (step.prazo && step.prazo.startsWith(dateString)) {
+                        events.push({
+                            ...step,
+                            projectId: project.id,
+                            ideaId: idea.id,
+                            projectTitle: project.titulo,
+                            ideaTitle: idea.titulo
+                        });
+                    }
+                });
             });
         });
 
@@ -1019,7 +1267,8 @@ class ProjectManager {
                         <div class="calendar-tooltip-priority ${priority}"></div>
                         <div>
                             <strong>${step.titulo}</strong><br>
-                            <small>${project ? project.titulo : 'Projeto não encontrado'}</small>
+                            <small>Ideia: ${step.ideaTitle}</small><br>
+                            <small>Projeto: ${project ? project.titulo : 'Projeto não encontrado'}</small>
                         </div>
                     </div>
                 `;
@@ -1082,8 +1331,10 @@ class ProjectManager {
     hasEventsOnDate(date) {
         const dateString = date.toISOString().split('T')[0];
         return this.projects.some(project => 
-            project.etapas.some(step => 
-                step.prazo && step.prazo.startsWith(dateString)
+            project.ideias.some(idea =>
+                idea.etapas.some(step => 
+                    step.prazo && step.prazo.startsWith(dateString)
+                )
             )
         );
     }
@@ -1100,13 +1351,16 @@ class ProjectManager {
         const events = [];
 
         this.projects.forEach(project => {
-            project.etapas.forEach(step => {
-                if (step.prazo && step.prazo.startsWith(dateString)) {
-                    events.push({
-                        step,
-                        project
-                    });
-                }
+            project.ideias.forEach(idea => {
+                idea.etapas.forEach(step => {
+                    if (step.prazo && step.prazo.startsWith(dateString)) {
+                        events.push({
+                            step,
+                            idea,
+                            project
+                        });
+                    }
+                });
             });
         });
 
@@ -1118,10 +1372,11 @@ class ProjectManager {
         container.innerHTML = events.map(event => `
             <div class="event-item">
                 <div class="event-title">${event.step.titulo}</div>
+                <div class="event-project">Ideia: ${event.idea.titulo}</div>
                 <div class="event-project">Projeto: ${event.project.titulo}</div>
                 <div class="event-meta">
                     Responsável: ${event.step.responsavel || 'Não informado'} | 
-                    ${event.step.observacao || 'Sem observações'}
+                    ${event.step.observacao ? this.stripHtml(event.step.observacao) : 'Sem observações'}
                     ${event.step.link ? ` | Link: <a href="${event.step.link}" target="_blank">${event.step.link}</a>` : ''}
                 </div>
             </div>
@@ -1263,7 +1518,7 @@ class ProjectManager {
         } else {
             const projectId = document.getElementById('projetoEspecifico').value;
             if (!projectId) {
-                this.showToast('Selecione um projeto específico!');
+                this.showToast('Selecione um projeto específico!', 'warning');
                 return;
             }
             projectsToInclude = this.projects.filter(p => p.id === projectId);
@@ -1312,7 +1567,7 @@ class ProjectManager {
             doc.setFont(undefined, 'normal');
             
             const projectInfo = [
-                `Descrição: ${project.descricao || 'Não informada'}`,
+                `Descrição: ${this.stripHtml(project.descricao) || 'Não informada'}`,
                 `Responsável: ${project.responsavel || 'Não informado'}`,
                 `Prioridade: ${project.prioridade.toUpperCase()}`,
                 `Data de Criação: ${new Date(project.dataCriacao).toLocaleDateString('pt-BR')}`,
@@ -1325,44 +1580,62 @@ class ProjectManager {
                 yPosition += 6;
             });
 
-            // Etapas
-            if (project.etapas.length > 0) {
+            // Ideias
+            if (project.ideias.length > 0) {
                 yPosition += 5;
                 doc.setFont(undefined, 'bold');
-                doc.text('Etapas:', margin, yPosition);
+                doc.text('Ideias:', margin, yPosition);
                 yPosition += 8;
 
-                const tableData = project.etapas.map(step => [
-                    step.titulo,
-                    step.responsavel || 'N/A',
-                    step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'N/A',
-                    step.link || 'N/A', // Novo campo
-                    step.concluida ? 'Sim' : 'Não',
-                    step.observacao || 'N/A'
-                ]);
+                project.ideias.forEach((idea, ideaIndex) => {
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${ideaIndex + 1}. ${idea.titulo}`, margin + 10, yPosition);
+                    yPosition += 6;
+                    
+                    if (idea.descricao) {
+                        doc.setFont(undefined, 'normal');
+                        doc.text(`Descrição: ${this.stripHtml(idea.descricao)}`, margin + 10, yPosition);
+                        yPosition += 6;
+                    }
 
-                doc.autoTable({
-                    head: [['Título', 'Responsável', 'Prazo', 'Link', 'Concluída', 'Observação']], // Cabeçalho atualizado
-                    body: tableData,
-                    startY: yPosition,
-                    margin: { left: margin, right: margin },
-                    styles: {
-                        fontSize: 8,
-                        cellPadding: 3
-                    },
-                    headStyles: {
-                        fillColor: [51, 51, 51],
-                        textColor: [255, 255, 255]
-                    },
-                    alternateRowStyles: {
-                        fillColor: [248, 249, 250]
+                    if (idea.etapas.length > 0) {
+                        const tableData = idea.etapas.map(step => [
+                            step.titulo,
+                            step.responsavel || 'N/A',
+                            step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'N/A',
+                            step.link || 'N/A',
+                            step.concluida ? 'Sim' : 'Não',
+                            this.stripHtml(step.observacao) || 'N/A'
+                        ]);
+
+                        doc.autoTable({
+                            head: [['Etapa', 'Responsável', 'Prazo', 'Link', 'Concluída', 'Observação']],
+                            body: tableData,
+                            startY: yPosition,
+                            margin: { left: margin + 10, right: margin },
+                            styles: {
+                                fontSize: 8,
+                                cellPadding: 3
+                            },
+                            headStyles: {
+                                fillColor: [51, 51, 51],
+                                textColor: [255, 255, 255]
+                            },
+                            alternateRowStyles: {
+                                fillColor: [248, 249, 250]
+                            }
+                        });
+
+                        yPosition = doc.lastAutoTable.finalY + 10;
+                    } else {
+                        doc.setFont(undefined, 'italic');
+                        doc.text('Nenhuma etapa cadastrada.', margin + 10, yPosition);
+                        yPosition += 10;
                     }
                 });
-
-                yPosition = doc.lastAutoTable.finalY + 15;
             } else {
                 doc.setFont(undefined, 'italic');
-                doc.text('Nenhuma etapa cadastrada.', margin, yPosition);
+                doc.text('Nenhuma ideia cadastrada.', margin, yPosition);
                 yPosition += 15;
             }
 
@@ -1380,9 +1653,25 @@ class ProjectManager {
     }
 
     calculateProgress(project) {
-        if (project.etapas.length === 0) return 0;
-        const completed = project.etapas.filter(step => step.concluida).length;
-        return Math.round((completed / project.etapas.length) * 100);
+        if (project.ideias.length === 0) return 0;
+        
+        let totalSteps = 0;
+        let completedSteps = 0;
+        
+        project.ideias.forEach(idea => {
+            totalSteps += idea.etapas.length;
+            completedSteps += idea.etapas.filter(step => step.concluida).length;
+        });
+        
+        if (totalSteps === 0) return 0;
+        return Math.round((completedSteps / totalSteps) * 100);
+    }
+
+    stripHtml(html) {
+        if (!html) return '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
     }
 
     showToast(message, type = 'success', title = null, duration = 3000) {
@@ -1445,7 +1734,28 @@ class ProjectManager {
     // Persistência
     loadProjects() {
         const stored = localStorage.getItem('gestao_projetos');
-        return stored ? JSON.parse(stored) : [];
+        const projects = stored ? JSON.parse(stored) : [];
+        
+        // Migrar projetos antigos que usam 'etapas' para 'ideias'
+        return projects.map(project => {
+            if (project.etapas && !project.ideias) {
+                // Migrar estrutura antiga
+                project.ideias = [{
+                    id: this.generateId(),
+                    titulo: 'Ideias Migradas',
+                    descricao: 'Etapas migradas da versão anterior do sistema',
+                    etapas: project.etapas
+                }];
+                delete project.etapas;
+            }
+            
+            // Garantir que ideias existe
+            if (!project.ideias) {
+                project.ideias = [];
+            }
+            
+            return project;
+        });
     }
 
     saveProjects() {
@@ -1467,11 +1777,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // Funções globais para eventos inline
 window.projectManager = {
     showProjectDetails: (id) => projectManager.showProjectDetails(id),
-    editStep: (id) => projectManager.editStep(id),
-    removeStep: (id) => projectManager.removeStep(id),
-    toggleStepCompletion: (id) => projectManager.toggleStepCompletion(id),
+    editIdea: (id) => projectManager.editIdea(id),
+    removeIdea: (id) => projectManager.removeIdea(id),
+    editStep: (stepId, ideaId) => projectManager.editStep(stepId, ideaId),
+    removeStep: (stepId, ideaId) => projectManager.removeStep(stepId, ideaId),
+    toggleStepCompletion: (stepId, ideaId) => projectManager.toggleStepCompletion(stepId, ideaId),
     selectDate: (date) => projectManager.selectDate(date),
     toggleTaskCompletion: (id) => projectManager.toggleTaskCompletion(id),
-    removeTask: (id) => projectManager.removeTask(id)
+    removeTask: (id) => projectManager.removeTask(id),
+    openRichTextEditor: (element) => projectManager.openRichTextEditor(element),
+    showStepModal: (stepId, ideaId) => projectManager.showStepModal(stepId, ideaId)
 };
 
