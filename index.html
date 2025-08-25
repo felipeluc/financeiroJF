@@ -8,6 +8,8 @@
     <!-- CDN jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- CDN TinyMCE -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 </head>
 <body>
     <!-- Navegação -->
@@ -164,6 +166,7 @@
                                 <th class="sortable" data-sort="prioridade">Prioridade</th>
                                 <th class="sortable" data-sort="progresso">Progresso</th>
                                 <th class="sortable" data-sort="data">Data</th>
+                                <th>Data de Entrega</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -200,7 +203,11 @@
                 </div>
                 <div class="form-group">
                     <label for="descricao">Descrição</label>
-                    <textarea id="descricao" name="descricao" rows="4"></textarea>
+                    <div class="rich-text-field" id="descricao" data-field="descricao" onclick="projectManager.openRichTextEditor(this)">
+                        <div class="rich-text-content" id="descricaoContent">Clique aqui para adicionar uma descrição detalhada...</div>
+                        <div class="rich-text-icon">✏️</div>
+                    </div>
+                    <input type="hidden" id="descricaoHidden" name="descricao">
                 </div>
                 <div class="form-group">
                     <label for="responsavel">Responsável</label>
@@ -252,9 +259,9 @@
                 </div>
             </div>
             <div class="calendar-events" id="calendarEvents">
-                <h3>Etapas do dia selecionado:</h3>
+                <h3>Ideias do dia selecionado:</h3>
                 <div id="eventsList">
-                    <p>Selecione um dia para ver as etapas agendadas.</p>
+                    <p>Selecione um dia para ver as ideias agendadas.</p>
                 </div>
                 <!-- Nova seção para marcar tarefas como concluídas -->
                 <div class="daily-tasks" id="dailyTasks">
@@ -282,13 +289,13 @@
             <div class="project-details" id="projectDetails">
                 <!-- Detalhes do projeto serão inseridos aqui -->
             </div>
-            <div class="steps-section">
-                <div class="steps-header">
-                    <h3>Etapas</h3>
-                    <button class="btn btn-primary" id="adicionarEtapaBtn">Adicionar Etapa</button>
+            <div class="ideas-section">
+                <div class="ideas-header">
+                    <h3>Ideias</h3>
+                    <button class="btn btn-primary" id="adicionarIdeiaBtn">Adicionar Ideia</button>
                 </div>
-                <div class="steps-list" id="stepsList">
-                    <!-- Etapas serão inseridas aqui -->
+                <div class="ideas-list" id="ideasList">
+                    <!-- Ideias serão inseridas aqui -->
                 </div>
             </div>
         </section>
@@ -340,7 +347,11 @@
                     </div>
                     <div class="form-group">
                         <label for="editDescricao">Descrição</label>
-                        <textarea id="editDescricao" rows="4"></textarea>
+                        <div class="rich-text-field" id="editDescricao" data-field="editDescricao" onclick="projectManager.openRichTextEditor(this)">
+                            <div class="rich-text-content" id="editDescricaoContent">Clique aqui para editar a descrição...</div>
+                            <div class="rich-text-icon">✏️</div>
+                        </div>
+                        <input type="hidden" id="editDescricaoHidden">
                     </div>
                     <div class="form-group">
                         <label for="editResponsavel">Responsável</label>
@@ -363,6 +374,36 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarEdicao">Cancelar</button>
                 <button class="btn btn-primary" id="salvarEdicao">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar/Editar Ideia -->
+    <div class="modal" id="ideiaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="ideiaModalTitle">Adicionar Ideia</h3>
+                <span class="close" id="closeIdeiaModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="ideiaForm">
+                    <div class="form-group">
+                        <label for="ideiaTitulo">Título *</label>
+                        <input type="text" id="ideiaTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ideiaDescricao">Descrição</label>
+                        <div class="rich-text-field" id="ideiaDescricao" data-field="ideiaDescricao" onclick="projectManager.openRichTextEditor(this)">
+                            <div class="rich-text-content" id="ideiaDescricaoContent">Clique aqui para adicionar uma descrição da ideia...</div>
+                            <div class="rich-text-icon">✏️</div>
+                        </div>
+                        <input type="hidden" id="ideiaDescricaoHidden">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarIdeia">Cancelar</button>
+                <button class="btn btn-primary" id="salvarIdeia">Salvar</button>
             </div>
         </div>
     </div>
@@ -394,7 +435,11 @@
                     </div>
                     <div class="form-group">
                         <label for="etapaObservacao">Observação</label>
-                        <textarea id="etapaObservacao" rows="3"></textarea>
+                        <div class="rich-text-field" id="etapaObservacao" data-field="etapaObservacao" onclick="projectManager.openRichTextEditor(this)">
+                            <div class="rich-text-content" id="etapaObservacaoContent">Clique aqui para adicionar observações...</div>
+                            <div class="rich-text-icon">✏️</div>
+                        </div>
+                        <input type="hidden" id="etapaObservacaoHidden">
                     </div>
                     <div class="form-group">
                         <label>
@@ -407,6 +452,23 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarEtapa">Cancelar</button>
                 <button class="btn btn-primary" id="salvarEtapa">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editor de Texto Rico -->
+    <div class="modal" id="richTextModal">
+        <div class="modal-content rich-text-modal-content">
+            <div class="modal-header">
+                <h3>Editor de Texto</h3>
+                <span class="close" id="closeRichTextModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="richTextEditor"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarRichText">Cancelar</button>
+                <button class="btn btn-primary" id="salvarRichText">Salvar</button>
             </div>
         </div>
     </div>
@@ -424,5 +486,4 @@
     <script src="app.js"></script>
 </body>
 </html>
-
 
