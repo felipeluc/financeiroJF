@@ -3,30 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Gestor de Ideias</title>
+  <title>Gestão de Projetos</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="https://img.icons8.com/ios-filled/50/1a1a1a/idea.png">
+  <link rel="icon" href="https://img.icons8.com/ios-filled/50/000000/idea.png">
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="background-blur"></div>
-  <div class="main-shell">
-    <header>
-      <div class="brand">
-        <span class="brand-dot"></span>
-        <span class="brand-title">Gestor de Ideias</span>
-      </div>
+  <div id="app-shell">
+    <aside>
+      <div class="logo">Gestão</div>
       <nav>
-        <button id="nav-ideia" class="nav-btn">Nova Ideia</button>
-        <button id="nav-lista" class="nav-btn">Acompanhamento</button>
+        <button id="menu-dashboard" class="nav-btn">Dashboard</button>
+        <button id="menu-adicionar" class="nav-btn">Novo Projeto</button>
+        <button id="menu-acompanhar" class="nav-btn">Acompanhamento</button>
       </nav>
-    </header>
+    </aside>
     <main id="main-content"></main>
-    <footer>
-      <span>© 2025 Gestor de Ideias</span>
-      <span class="footer-right">by Professional Dev AI</span>
-    </footer>
   </div>
   <div id="modal-overlay" class="modal-overlay" style="display:none;">
     <div class="modal-content" id="modal-content"></div>
