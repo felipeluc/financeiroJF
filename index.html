@@ -211,6 +211,10 @@
                         <option value="leve">Leve</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="dataEntrega">Data de Entrega</label>
+                    <input type="date" id="dataEntrega" name="dataEntrega">
+                </div>
                 <button type="submit" class="btn btn-primary">Salvar Projeto</button>
             </form>
         </section>
@@ -347,6 +351,10 @@
                             <option value="leve">Leve</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="editDataEntrega">Data de Entrega</label>
+                        <input type="date" id="editDataEntrega" name="editDataEntrega">
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -378,6 +386,10 @@
                         <input type="date" id="etapaPrazo">
                     </div>
                     <div class="form-group">
+                        <label for="etapaLink">Link</label>
+                        <input type="text" id="etapaLink" placeholder="https://exemplo.com">
+                    </div>
+                    <div class="form-group">
                         <label for="etapaObservacao">Observação</label>
                         <textarea id="etapaObservacao" rows="3"></textarea>
                     </div>
@@ -396,19 +408,18 @@
         </div>
     </div>
 
-    <!-- Toast de notificação -->
+    <!-- Toast Notification -->
     <div class="toast" id="toast">
+        <div class="toast-icon" id="toastIcon">✓</div>
         <div class="toast-content">
-            <div class="toast-icon" id="toastIcon">✓</div>
-            <div class="toast-text">
-                <div class="toast-title" id="toastTitle">Sucesso</div>
-                <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
-            </div>
-            <button class="toast-close" id="toastClose">&times;</button>
+            <div class="toast-title" id="toastTitle">Sucesso</div>
+            <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
         </div>
+        <button class="toast-close" id="toastClose">&times;</button>
     </div>
 
     <script src="app.js"></script>
 </body>
 </html>
+
 
