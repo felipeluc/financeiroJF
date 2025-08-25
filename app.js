@@ -6,6 +6,8 @@ class ProjectManager {
         this.currentDate = new Date();
         this.selectedDate = null;
         this.dailyTasks = this.loadDailyTasks(); // Nova propriedade para tarefas diárias
+        this.calendarFilter = 'etapas'; // Filtro padrão do calendário
+        this.currentStepTasks = []; // Tarefas temporárias do modal de etapa
         
         // Novas propriedades para filtros e paginação
         this.filters = {
@@ -217,6 +219,26 @@ class ProjectManager {
 
         document.getElementById('proximoMes').addEventListener('click', () => {
             this.changeMonth(1);
+        });
+
+        // Filtro do calendário
+        document.getElementById('calendarFilter').addEventListener('change', (e) => {
+            this.calendarFilter = e.target.value;
+            this.renderCalendar();
+            if (this.selectedDate) {
+                this.renderCalendarEvents();
+            }
+        });
+
+        // Tarefas do modal de etapa
+        document.getElementById('addStepTaskBtn').addEventListener('click', () => {
+            this.addStepTask();
+        });
+
+        document.getElementById('newStepTaskInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addStepTask();
+            }
         });
 
         // Tarefas diárias
@@ -602,6 +624,9 @@ class ProjectManager {
         const modal = document.getElementById('etapaModal');
         const title = document.getElementById('etapaModalTitle');
         
+        // Limpar tarefas temporárias
+        this.currentStepTasks = [];
+        
         if (stepId) {
             const step = this.currentProject.etapas.find(s => s.id === stepId);
             title.textContent = 'Editar Etapa';
@@ -611,6 +636,10 @@ class ProjectManager {
             document.getElementById('etapaLink').value = step.link || ''; // Novo campo
             document.getElementById('etapaObservacao').value = step.observacao || '';
             document.getElementById('etapaConcluida').checked = step.concluida;
+            
+            // Carregar tarefas existentes
+            this.currentStepTasks = step.tarefas ? [...step.tarefas] : [];
+            
             modal.dataset.stepId = stepId;
         } else {
             title.textContent = 'Adicionar Etapa';
@@ -618,11 +647,70 @@ class ProjectManager {
             delete modal.dataset.stepId;
         }
 
+        this.renderStepTasksList();
         modal.classList.add('show');
     }
 
     hideStepModal() {
         document.getElementById('etapaModal').classList.remove('show');
+        this.currentStepTasks = [];
+    }
+
+    // Funções para gerenciar tarefas no modal de etapa
+    addStepTask() {
+        const input = document.getElementById('newStepTaskInput');
+        const taskText = input.value.trim();
+
+        if (!taskText) {
+            this.showToast('Digite o texto da tarefa!', 'warning');
+            return;
+        }
+
+        const newTask = {
+            id: this.generateId(),
+            titulo: taskText,
+            concluida: false,
+            responsavel: '',
+            prazo: '',
+            observacao: ''
+        };
+
+        this.currentStepTasks.push(newTask);
+        input.value = '';
+        this.renderStepTasksList();
+    }
+
+    removeStepTask(taskId) {
+        this.currentStepTasks = this.currentStepTasks.filter(t => t.id !== taskId);
+        this.renderStepTasksList();
+    }
+
+    toggleStepTaskCompletion(taskId) {
+        const task = this.currentStepTasks.find(t => t.id === taskId);
+        if (task) {
+            task.concluida = !task.concluida;
+            this.renderStepTasksList();
+        }
+    }
+
+    renderStepTasksList() {
+        const container = document.getElementById('stepTasksList');
+        
+        if (this.currentStepTasks.length === 0) {
+            container.innerHTML = '<p class="no-tasks">Nenhuma tarefa adicionada ainda.</p>';
+            return;
+        }
+
+        container.innerHTML = this.currentStepTasks.map(task => `
+            <div class="task-item ${task.concluida ? 'completed' : ''}">
+                <div class="task-content">
+                    <input type="checkbox" ${task.concluida ? 'checked' : ''} 
+                           onchange="projectManager.toggleStepTaskCompletion('${task.id}')">
+                    <span class="task-title">${task.titulo}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="projectManager.removeStepTask('${task.id}')">×</button>
+            </div>
+        `).join('');
     }
 
     saveStep() {
@@ -635,11 +723,12 @@ class ProjectManager {
             prazo: document.getElementById('etapaPrazo').value,
             link: document.getElementById('etapaLink').value, // Novo campo
             observacao: document.getElementById('etapaObservacao').value,
-            concluida: document.getElementById('etapaConcluida').checked
+            concluida: document.getElementById('etapaConcluida').checked,
+            tarefas: [...this.currentStepTasks] // Incluir tarefas
         };
 
         if (!stepData.titulo.trim()) {
-            this.showToast('Título da etapa é obrigatório!');
+            this.showToast('Título da etapa é obrigatório!', 'warning');
             return;
         }
 
@@ -1060,51 +1149,140 @@ class ProjectManager {
 
     hasEventsOnDate(date) {
         const dateString = date.toISOString().split('T')[0];
-        return this.projects.some(project => 
-            project.etapas.some(step => 
-                step.prazo && step.prazo.startsWith(dateString)
-            )
-        );
+        
+        if (this.calendarFilter === 'projetos') {
+            return this.projects.some(project => 
+                project.dataEntrega && project.dataEntrega.startsWith(dateString)
+            );
+        } else if (this.calendarFilter === 'etapas') {
+            return this.projects.some(project => 
+                project.etapas.some(step => 
+                    step.prazo && step.prazo.startsWith(dateString)
+                )
+            );
+        } else if (this.calendarFilter === 'tarefas') {
+            return this.projects.some(project => 
+                project.etapas.some(step => 
+                    step.tarefas && step.tarefas.some(task => 
+                        task.prazo && task.prazo.startsWith(dateString)
+                    )
+                )
+            );
+        }
+        
+        return false;
     }
 
     renderCalendarEvents() {
         const container = document.getElementById('eventsList');
         
         if (!this.selectedDate) {
-            container.innerHTML = '<p>Selecione um dia para ver as etapas agendadas.</p>';
+            const filterText = this.calendarFilter === 'projetos' ? 'projetos' : 
+                              this.calendarFilter === 'etapas' ? 'etapas' : 'tarefas';
+            container.innerHTML = `<p>Selecione um dia para ver os ${filterText} agendados.</p>`;
             return;
         }
 
         const dateString = this.selectedDate.toISOString().split('T')[0];
         const events = [];
 
-        this.projects.forEach(project => {
-            project.etapas.forEach(step => {
-                if (step.prazo && step.prazo.startsWith(dateString)) {
+        if (this.calendarFilter === 'projetos') {
+            // Mostrar projetos com data de entrega no dia selecionado
+            this.projects.forEach(project => {
+                if (project.dataEntrega && project.dataEntrega.startsWith(dateString)) {
                     events.push({
-                        step,
-                        project
+                        type: 'projeto',
+                        titulo: project.titulo,
+                        descricao: project.descricao,
+                        responsavel: project.responsavel,
+                        prioridade: project.prioridade
                     });
                 }
             });
-        });
+            
+            if (events.length === 0) {
+                container.innerHTML = '<p>Nenhum projeto com entrega agendada para este dia.</p>';
+                return;
+            }
 
-        if (events.length === 0) {
-            container.innerHTML = '<p>Nenhuma etapa agendada para este dia.</p>';
-            return;
-        }
-
-        container.innerHTML = events.map(event => `
-            <div class="event-item">
-                <div class="event-title">${event.step.titulo}</div>
-                <div class="event-project">Projeto: ${event.project.titulo}</div>
-                <div class="event-meta">
-                    Responsável: ${event.step.responsavel || 'Não informado'} | 
-                    ${event.step.observacao || 'Sem observações'}
-                    ${event.step.link ? ` | Link: <a href="${event.step.link}" target="_blank">${event.step.link}</a>` : ''}
+            container.innerHTML = events.map(event => `
+                <div class="event-item">
+                    <div class="event-title">${event.titulo}</div>
+                    <div class="event-description">${event.descricao || 'Sem descrição'}</div>
+                    <div class="event-meta">
+                        Responsável: ${event.responsavel || 'Não informado'} | 
+                        Prioridade: <span class="priority-badge ${event.prioridade}">${event.prioridade.toUpperCase()}</span>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+            
+        } else if (this.calendarFilter === 'etapas') {
+            // Mostrar etapas com prazo no dia selecionado
+            this.projects.forEach(project => {
+                project.etapas.forEach(step => {
+                    if (step.prazo && step.prazo.startsWith(dateString)) {
+                        events.push({
+                            type: 'etapa',
+                            step,
+                            project
+                        });
+                    }
+                });
+            });
+            
+            if (events.length === 0) {
+                container.innerHTML = '<p>Nenhuma etapa agendada para este dia.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => `
+                <div class="event-item">
+                    <div class="event-title">${event.step.titulo}</div>
+                    <div class="event-project">Projeto: ${event.project.titulo}</div>
+                    <div class="event-meta">
+                        Responsável: ${event.step.responsavel || 'Não informado'} | 
+                        ${event.step.observacao || 'Sem observações'}
+                        ${event.step.link ? ` | Link: <a href="${event.step.link}" target="_blank">${event.step.link}</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+        } else if (this.calendarFilter === 'tarefas') {
+            // Mostrar tarefas com prazo no dia selecionado
+            this.projects.forEach(project => {
+                project.etapas.forEach(step => {
+                    if (step.tarefas) {
+                        step.tarefas.forEach(task => {
+                            if (task.prazo && task.prazo.startsWith(dateString)) {
+                                events.push({
+                                    type: 'tarefa',
+                                    task,
+                                    step,
+                                    project
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            if (events.length === 0) {
+                container.innerHTML = '<p>Nenhuma tarefa agendada para este dia.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => `
+                <div class="event-item">
+                    <div class="event-title">${event.task.titulo}</div>
+                    <div class="event-project">Etapa: ${event.step.titulo} | Projeto: ${event.project.titulo}</div>
+                    <div class="event-meta">
+                        Responsável: ${event.task.responsavel || 'Não informado'} | 
+                        Status: ${event.task.concluida ? 'Concluída' : 'Pendente'}
+                        ${event.task.observacao ? ` | ${event.task.observacao}` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
     }
 
     // Gerenciamento de Tarefas Diárias
