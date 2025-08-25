@@ -1,6 +1,6 @@
-// Professional Dev AI - Gestão de Projetos SaaS - app.js (com calendário, observação e PDF bonito)
+// Professional Dev AI - Gestão de Projetos SaaS - app.js
 
-// --- MODELO DE DADOS ---
+// ---- MODELO DE DADOS E UTILITÁRIOS ----
 const PRIORIDADES = [
   { value: 'alta', label: 'Alta', class: 'priority-alta', color: '#e74c3c', text: '#fff' },
   { value: 'media', label: 'Média', class: 'priority-media', color: '#f4d03f', text: '#232427' },
@@ -18,7 +18,7 @@ function gerarId() {
   return '_' + Math.random().toString(36).slice(2, 10) + Date.now();
 }
 
-// --- UI HELPERS ---
+// ---- UI HELPERS ----
 function el(tag, attrs = {}, ...children) {
   const e = document.createElement(tag);
   Object.entries(attrs).forEach(([k, v]) => {
@@ -55,7 +55,7 @@ document.getElementById('modal-overlay').onclick = e => {
   if (e.target === e.currentTarget) closeModal();
 };
 
-// --- NAVEGAÇÃO ---
+// ---- NAVEGAÇÃO ----
 const sections = {
   dashboard: renderDashboard,
   adicionar: renderAdicionarProjeto,
@@ -71,7 +71,7 @@ function setSection(sec) {
   sections[sec]();
 }
 
-// --- DASHBOARD ---
+// ---- DASHBOARD ----
 function renderDashboard() {
   const projetos = getProjetos();
   const total = projetos.length;
@@ -113,7 +113,7 @@ function renderDashboard() {
   );
 }
 
-// --- MODAL PDF ---
+// ---- MODAL PDF ----
 function renderModalPDF(projetos) {
   return el('div', {},
     el('button', { class: 'modal-close', onclick: closeModal }, '×'),
@@ -252,7 +252,7 @@ function gerarPDF(projetos) {
   showToast('PDF gerado com sucesso!');
 }
 
-// --- NOVO PROJETO ---
+// ---- NOVO PROJETO ----
 function renderAdicionarProjeto() {
   const main = document.getElementById('main-content');
   main.innerHTML = '';
@@ -299,7 +299,7 @@ function renderAdicionarProjeto() {
   };
 }
 
-// --- DESENHAR/EDITAR PROJETO ---
+// ---- EDITAR PROJETO E ETAPAS ----
 function renderEditarProjeto(id) {
   const projetos = getProjetos();
   const projeto = projetos.find(p => p.id === id);
@@ -310,7 +310,6 @@ function renderEditarProjeto(id) {
     renderEditarProjeto(id);
   }
 
-  // Modal para adicionar nova etapa
   function modalNovaEtapa() {
     openModal(
       el('div', {},
@@ -349,7 +348,6 @@ function renderEditarProjeto(id) {
     };
   }
 
-  // Modal para editar etapa
   function modalEditarEtapa(etapa) {
     openModal(
       el('div', {},
@@ -390,7 +388,6 @@ function renderEditarProjeto(id) {
     };
   }
 
-  // Modal para editar dados do projeto
   function modalEditarProjeto() {
     openModal(
       el('div', {},
@@ -427,7 +424,6 @@ function renderEditarProjeto(id) {
     };
   }
 
-  // Modal para remover projeto
   function modalRemoverProjeto() {
     openModal(
       el('div', {},
@@ -447,12 +443,10 @@ function renderEditarProjeto(id) {
     );
   }
 
-  // Progresso
   const totalEtapas = projeto.etapas.length;
   const concluido = projeto.etapas.filter(e => e.concluida).length;
   const progresso = totalEtapas ? Math.round((concluido / totalEtapas) * 100) : 0;
 
-  // Renderização
   const main = document.getElementById('main-content');
   main.innerHTML = '';
   main.appendChild(
@@ -527,13 +521,12 @@ function renderEditarProjeto(id) {
   );
 }
 
-// --- ACOMPANHAMENTO ---
+// ---- ACOMPANHAMENTO ----
 function renderAcompanhamento() {
   const main = document.getElementById('main-content');
   main.innerHTML = '';
   const projetos = getProjetos();
 
-  // Filtros e ordenação
   let filtro = '';
   let ordem = 'prioridade';
 
@@ -634,7 +627,7 @@ function renderAcompanhamento() {
   atualizarLista();
 }
 
-// --- CALENDÁRIO ---
+// ---- CALENDÁRIO ----
 function renderCalendario() {
   const main = document.getElementById('main-content');
   main.innerHTML = '';
@@ -653,7 +646,6 @@ function renderCalendario() {
       )
     );
 
-    // Monta calendário
     const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     const table = el('table', { class: 'calendar-table' });
     const head = el('tr', {}, diasSemana.map(dia => el('th', {}, dia)));
@@ -731,11 +723,11 @@ function renderCalendario() {
   renderMes();
 }
 
-// --- EVENTOS DE NAVEGAÇÃO ---
+// ---- EVENTOS DE NAVEGAÇÃO ----
 document.getElementById('menu-dashboard').onclick = () => setSection('dashboard');
 document.getElementById('menu-adicionar').onclick = () => setSection('adicionar');
 document.getElementById('menu-acompanhar').onclick = () => setSection('acompanhar');
 document.getElementById('menu-calendario').onclick = () => setSection('calendario');
 
-// --- INICIALIZAÇÃO ---
+// ---- INICIALIZAÇÃO ----
 setSection('dashboard');
