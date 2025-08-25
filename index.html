@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Gestão de Projetos</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="https://img.icons8.com/ios-filled/50/000000/idea.png">
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8">
+  <title>Gestão de Projetos SaaS</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <!-- jsPDF e autoTable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-  <div id="app-shell">
-    <aside>
-      <div class="logo">Gestão</div>
-      <nav>
-        <button id="menu-dashboard" class="nav-btn">Dashboard</button>
-        <button id="menu-adicionar" class="nav-btn">Novo Projeto</button>
-        <button id="menu-acompanhar" class="nav-btn">Acompanhamento</button>
-      </nav>
-    </aside>
-    <main id="main-content"></main>
+  <nav id="sidebar">
+    <div class="logo">Projetos SaaS</div>
+    <button id="menu-dashboard" class="nav-btn active">Dashboard</button>
+    <button id="menu-acompanhar" class="nav-btn">Acompanhar</button>
+    <button id="menu-adicionar" class="nav-btn">Adicionar Projeto</button>
+    <button id="menu-calendario" class="nav-btn">Calendário</button>
+  </nav>
+  <main id="main-content"></main>
+
+  <div id="modal-overlay" style="display:none;">
+    <div id="modal-content"></div>
   </div>
-  <div id="modal-overlay" class="modal-overlay" style="display:none;">
-    <div class="modal-content" id="modal-content"></div>
-  </div>
-  <div id="toast" class="toast"></div>
+  <div id="toast"></div>
+
   <script src="app.js"></script>
 </body>
 </html>
