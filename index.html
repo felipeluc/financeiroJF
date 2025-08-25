@@ -223,9 +223,19 @@
         <section id="calendario" class="section">
             <h1>Calendário</h1>
             <div class="calendar-header">
-                <button class="btn btn-secondary" id="mesAnterior">Anterior</button>
-                <h2 id="mesAno">Janeiro 2024</h2>
-                <button class="btn btn-secondary" id="proximoMes">Próximo</button>
+                <div class="calendar-filter">
+                    <label for="calendarFilter">Visualizar:</label>
+                    <select id="calendarFilter" class="filter-select">
+                        <option value="projetos">Projetos</option>
+                        <option value="etapas">Etapas</option>
+                        <option value="tarefas">Tarefas</option>
+                    </select>
+                </div>
+                <div class="calendar-navigation">
+                    <button class="btn btn-secondary" id="mesAnterior">Anterior</button>
+                    <h2 id="mesAno">Janeiro 2024</h2>
+                    <button class="btn btn-secondary" id="proximoMes">Próximo</button>
+                </div>
             </div>
             <div class="calendar-container">
                 <table class="calendar" id="calendar">
@@ -393,6 +403,21 @@
                         <label for="etapaObservacao">Observação</label>
                         <textarea id="etapaObservacao" rows="3"></textarea>
                     </div>
+                    
+                    <!-- Nova seção de tarefas -->
+                    <div class="form-group">
+                        <label>Tarefas da Etapa</label>
+                        <div class="tasks-section">
+                            <div class="add-task-row">
+                                <input type="text" id="newStepTaskInput" placeholder="Digite uma tarefa..." class="task-input">
+                                <button type="button" class="btn btn-secondary" id="addStepTaskBtn">Adicionar</button>
+                            </div>
+                            <div class="tasks-list" id="stepTasksList">
+                                <!-- Tarefas serão listadas aqui -->
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label>
                             <input type="checkbox" id="etapaConcluida">
