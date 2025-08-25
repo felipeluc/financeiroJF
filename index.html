@@ -68,10 +68,120 @@
         <section id="acompanhar" class="section">
             <h1>Acompanhar Projetos</h1>
             <div class="filter-section">
-                <input type="text" id="filtroTexto" placeholder="Buscar por título, descrição ou responsável..." class="filter-input">
+                <div class="filter-row">
+                    <input type="text" id="filtroTexto" placeholder="Buscar por título, descrição ou responsável..." class="filter-input">
+                    <button class="btn btn-secondary filter-toggle" id="toggleAdvancedFilters">
+                        <span>Filtros Avançados</span>
+                        <span class="filter-arrow">▼</span>
+                    </button>
+                </div>
+                
+                <div class="advanced-filters" id="advancedFilters">
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="filtroPrioridade">Prioridade</label>
+                            <select id="filtroPrioridade" class="filter-select">
+                                <option value="">Todas</option>
+                                <option value="alta">Alta</option>
+                                <option value="media">Média</option>
+                                <option value="leve">Leve</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filtroStatus">Status</label>
+                            <select id="filtroStatus" class="filter-select">
+                                <option value="">Todos</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="andamento">Em Andamento</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filtroResponsavel">Responsável</label>
+                            <select id="filtroResponsavel" class="filter-select">
+                                <option value="">Todos</option>
+                                <!-- Opções serão preenchidas dinamicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="ordenarPor">Ordenar por</label>
+                            <select id="ordenarPor" class="filter-select">
+                                <option value="prioridade">Prioridade</option>
+                                <option value="titulo">Título</option>
+                                <option value="data">Data de Criação</option>
+                                <option value="responsavel">Responsável</option>
+                                <option value="progresso">Progresso</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="direcaoOrdem">Direção</label>
+                            <select id="direcaoOrdem" class="filter-select">
+                                <option value="desc">Decrescente</option>
+                                <option value="asc">Crescente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group filter-actions">
+                            <button class="btn btn-secondary" id="limparFiltros">Limpar Filtros</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="projects-list" id="projectsList">
-                <!-- Projetos serão inseridos aqui dinamicamente -->
+            
+            <div class="projects-header">
+                <div class="projects-count">
+                    <span id="projectsCount">0 projetos encontrados</span>
+                </div>
+                <div class="view-options">
+                    <button class="btn btn-secondary view-toggle active" data-view="cards" id="viewCards">
+                        <span>📋</span> Cards
+                    </button>
+                    <button class="btn btn-secondary view-toggle" data-view="table" id="viewTable">
+                        <span>📊</span> Tabela
+                    </button>
+                </div>
+            </div>
+            
+            <div class="projects-container">
+                <div class="projects-list" id="projectsList">
+                    <!-- Projetos serão inseridos aqui dinamicamente -->
+                </div>
+                
+                <div class="projects-table hidden" id="projectsTable">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="titulo">Título</th>
+                                <th class="sortable" data-sort="responsavel">Responsável</th>
+                                <th class="sortable" data-sort="prioridade">Prioridade</th>
+                                <th class="sortable" data-sort="progresso">Progresso</th>
+                                <th class="sortable" data-sort="data">Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectsTableBody">
+                            <!-- Linhas da tabela serão inseridas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="pagination" id="pagination">
+                <button class="btn btn-secondary" id="prevPage" disabled>« Anterior</button>
+                <span class="pagination-info" id="paginationInfo">Página 1 de 1</span>
+                <button class="btn btn-secondary" id="nextPage" disabled>Próxima »</button>
+                <div class="pagination-size">
+                    <label for="pageSize">Itens por página:</label>
+                    <select id="pageSize" class="filter-select">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
             </div>
         </section>
 
@@ -128,6 +238,9 @@
                         <!-- Dias do calendário serão inseridos aqui -->
                     </tbody>
                 </table>
+                <div class="calendar-tooltip" id="calendarTooltip">
+                    <!-- Conteúdo do tooltip será inserido aqui -->
+                </div>
             </div>
             <div class="calendar-events" id="calendarEvents">
                 <h3>Etapas do dia selecionado:</h3>
@@ -272,7 +385,12 @@
 
     <!-- Toast de Notificação -->
     <div class="toast" id="toast">
-        <span id="toastMessage"></span>
+        <div class="toast-icon" id="toastIcon">✓</div>
+        <div class="toast-content">
+            <div class="toast-title" id="toastTitle">Sucesso</div>
+            <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
+        </div>
+        <button class="toast-close" id="toastClose" aria-label="Fechar notificação">×</button>
     </div>
 
     <script src="app.js"></script>
