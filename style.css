@@ -55,8 +55,8 @@ body {
   cursor: pointer;
 }
 .nav-btn.active, .nav-btn:hover {
-  background: var(--bg);
-  color: var(--accent);
+  background: #232427;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -147,7 +147,7 @@ h2, h3 {
 }
 
 .btn {
-  background: var(--accent);
+  background: #232427;
   color: #fff;
   border: none;
   padding: 8px 22px;
@@ -157,7 +157,15 @@ h2, h3 {
   font-weight: 600;
   transition: background .18s;
 }
-.btn:hover { background: #2563eb; }
+.btn:hover { background: #111213; }
+.btn.secondary {
+  background: #b0b8c9;
+  color: #232427;
+}
+.btn.secondary:hover {
+  background: #888f9b;
+  color: #fff;
+}
 .btn.danger { background: var(--danger); }
 .btn.danger:hover { background: #b91c1c; }
 
@@ -168,7 +176,7 @@ input, textarea, select {
   margin-bottom: 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fafdff;
+  background: #fff;
   color: var(--primary);
   box-sizing: border-box;
   font-family: var(--font);
