@@ -1,343 +1,492 @@
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyBFImw6Px0VKLiSVba8L-9PdjLPIU_HmSM",
-  authDomain: "financeiro-409db.firebaseapp.com",
-  projectId: "financeiro-409db",
-  storageBucket: "financeiro-409db.appspot.com",
-  messagingSenderId: "124692561019",
-  appId: "1:124692561019:web:ceb10e49cf667d61f3b6de"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// Professional Dev AI - Gestão de Projetos SaaS - app.js
 
-const main = document.getElementById('main-content');
-const navIdeia = document.getElementById('nav-ideia');
-const navLista = document.getElementById('nav-lista');
-const toast = document.getElementById('toast');
-const modalOverlay = document.getElementById('modal-overlay');
-const modalContent = document.getElementById('modal-content');
+// --- MODELO DE DADOS ---
+// Projeto: { id, titulo, descricao, responsavel, prioridade, dataCriacao, etapas: [ { id, titulo, responsavel, prazo, concluida } ] }
 
-let ideiaTemp = null;
-let currentPage = "nova";
-let allIdeias = [];
-let filtroBusca = "";
+const PRIORIDADES = [
+  { value: 'alta', label: 'Alta', class: 'priority-alta' },
+  { value: 'media', label: 'Média', class: 'priority-media' },
+  { value: 'leve', label: 'Leve', class: 'priority-leve' },
+];
 
-navIdeia.onclick = () => { setNavActive("nova"); showNovaIdeia(); };
-navLista.onclick = () => { setNavActive("acompanhar"); showAcompanhamento(); };
+const LS_KEY = 'gestao_projetos_v1';
 
-window.onload = () => {
-  setNavActive("nova");
-  showNovaIdeia();
-};
-
-function setNavActive(page) {
-  currentPage = page;
-  navIdeia.classList.toggle("active", page === "nova");
-  navLista.classList.toggle("active", page === "acompanhar");
+function getProjetos() {
+  return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+}
+function setProjetos(projetos) {
+  localStorage.setItem(LS_KEY, JSON.stringify(projetos));
+}
+function gerarId() {
+  return '_' + Math.random().toString(36).slice(2, 10) + Date.now();
 }
 
-// Toast
-function showToast(msg, type="") {
+// --- UI HELPERS ---
+function el(tag, attrs = {}, ...children) {
+  const e = document.createElement(tag);
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'html') e.innerHTML = v;
+    else e.setAttribute(k, v);
+  });
+  children.forEach(c => {
+    if (c == null) return;
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else if (Array.isArray(c)) c.forEach(cc => e.appendChild(cc));
+    else e.appendChild(c);
+  });
+  return e;
+}
+function showToast(msg) {
+  const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.className = "toast show" + (type ? ` ${type}` : "");
-  setTimeout(() => toast.className = "toast", 2200);
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
 }
-
-// Nova Ideia
-function showNovaIdeia() {
-  ideiaTemp = null;
-  main.innerHTML = `
-    <h2>Nova Ideia</h2>
-    <form id="form-ideia" autocomplete="off">
-      <div>
-        <label for="titulo">Título</label>
-        <input type="text" id="titulo" name="titulo" required maxlength="60" />
-      </div>
-      <div>
-        <label for="descricao">Descrição</label>
-        <textarea id="descricao" name="descricao" required maxlength="400" rows="3"></textarea>
-      </div>
-      <div>
-        <label for="responsavel">Responsável principal</label>
-        <input type="text" id="responsavel" name="responsavel" required maxlength="40" />
-      </div>
-      <div class="button-row">
-        <button type="submit" class="btn">Avançar para Planejamento</button>
-      </div>
-    </form>
-  `;
-  document.getElementById('form-ideia').onsubmit = handleNovaIdeia;
+function openModal(content) {
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal-content');
+  modal.innerHTML = '';
+  modal.appendChild(content);
+  overlay.style.display = 'flex';
 }
-
-async function handleNovaIdeia(e) {
-  e.preventDefault();
-  const titulo = e.target.titulo.value.trim();
-  const descricao = e.target.descricao.value.trim();
-  const responsavel = e.target.responsavel.value.trim();
-  showToast("Salvando ideia...");
-  const doc = await db.collection('ideias').add({
-    titulo, descricao, responsavel,
-    status: 'planejando',
-    etapas: [],
-    criadoEm: new Date().toISOString()
-  });
-  ideiaTemp = { id: doc.id, titulo, descricao, responsavel, etapas: [] };
-  showPlanejamento();
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
 }
-
-function showPlanejamento(editMode=false) {
-  main.innerHTML = `
-    <h2>${editMode ? "Editar" : "Planejamento da"} Ideia</h2>
-    <div style="margin-bottom:10px;">
-      <strong style="font-size:1.07em;">${ideiaTemp.titulo}</strong><br>
-      <span style="color:var(--secondary);font-size:.98em;">${ideiaTemp.descricao}</span>
-    </div>
-    <form id="form-etapa" style="margin-top:18px;">
-      <label>Nova Etapa</label>
-      <input type="text" id="etapa-nome" placeholder="Nome da etapa" required maxlength="60" />
-      <input type="text" id="etapa-quem" placeholder="Responsável" required maxlength="40" />
-      <input type="date" id="etapa-prazo" required />
-      <div class="button-row">
-        <button type="submit" class="btn">Adicionar Etapa</button>
-        <button type="button" class="btn" id="btn-finalizar">${editMode ? "Salvar Alterações" : "Finalizar Planejamento"}</button>
-      </div>
-    </form>
-    <ul id="lista-etapas" class="etapas-lista"></ul>
-  `;
-  document.getElementById('form-etapa').onsubmit = handleAddEtapa;
-  document.getElementById('btn-finalizar').onclick = salvarPlanejamento;
-  renderEtapas();
-}
-
-function handleAddEtapa(e) {
-  e.preventDefault();
-  const nome = document.getElementById('etapa-nome').value.trim();
-  const quem = document.getElementById('etapa-quem').value.trim();
-  const prazo = document.getElementById('etapa-prazo').value;
-  if (!nome || !quem || !prazo) return;
-  ideiaTemp.etapas.push({ nome, quem, prazo, done: false });
-  renderEtapas();
-  e.target.reset();
-}
-
-function renderEtapas() {
-  const lista = document.getElementById('lista-etapas');
-  if (!lista) return;
-  lista.innerHTML = "";
-  ideiaTemp.etapas.forEach((etapa, idx) => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <div class="etapa-info">
-        <span><b>${etapa.nome}</b> (${etapa.quem})</span>
-        <span style="font-size:.97em;color:var(--secondary);">Prazo: ${etapa.prazo}</span>
-      </div>
-      <div>
-        <button class="btn danger" style="padding:6px 16px;font-size:.94em;" onclick="removerEtapa(${idx})">Remover</button>
-      </div>
-    `;
-    lista.appendChild(li);
-  });
-}
-
-window.removerEtapa = function(idx) {
-  ideiaTemp.etapas.splice(idx, 1);
-  renderEtapas();
+document.getElementById('modal-overlay').onclick = e => {
+  if (e.target === e.currentTarget) closeModal();
 };
 
-async function salvarPlanejamento() {
-  if (!ideiaTemp.etapas.length) {
-    showToast("Adicione pelo menos uma etapa!", "error");
-    return;
-  }
-  showToast("Salvando planejamento...");
-  await db.collection('ideias').doc(ideiaTemp.id).update({
-    etapas: ideiaTemp.etapas,
-    status: 'em andamento'
-  });
-  ideiaTemp = null;
-  setNavActive("acompanhar");
-  showAcompanhamento();
+// --- NAVEGAÇÃO ---
+const sections = {
+  dashboard: renderDashboard,
+  adicionar: renderAdicionarProjeto,
+  acompanhar: renderAcompanhamento,
+};
+let currentSection = 'dashboard';
+
+function setSection(sec) {
+  currentSection = sec;
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('menu-' + sec).classList.add('active');
+  sections[sec]();
 }
 
-// Lista/Acompanhamento
-function showAcompanhamento() {
-  main.innerHTML = `
-    <h2>Acompanhamento de Ideias</h2>
-    <div class="button-row" style="gap:8px;margin-bottom:10px;">
-      <input type="search" id="busca-ideia" placeholder="Buscar ideia..." style="flex:1;max-width:68vw;">
-      <select id="filtro-status">
-        <option value="">Todas</option>
-        <option value="planejando">Planejando</option>
-        <option value="em andamento">Em andamento</option>
-        <option value="concluída">Concluída</option>
-      </select>
-      <button onclick="carregarIdeias()" class="btn" style="padding:10px 18px;background:var(--surface-light);color:var(--primary);font-size:1.02em;">Atualizar</button>
-    </div>
-    <div id="ideias-list" class="card-list"></div>
-  `;
-  document.getElementById('busca-ideia').oninput = function() {
-    filtroBusca = this.value.toLowerCase();
-    renderIdeiasList();
+// --- DASHBOARD ---
+function renderDashboard() {
+  const projetos = getProjetos();
+  const total = projetos.length;
+  const concluidos = projetos.filter(p => p.etapas.length && p.etapas.every(e => e.concluida)).length;
+  const emAndamento = total - concluidos;
+  const porPrioridade = PRIORIDADES.map(pri => ({
+    ...pri,
+    count: projetos.filter(p => p.prioridade === pri.value).length,
+  }));
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  main.appendChild(
+    el('div', {},
+      el('h2', {}, 'Dashboard'),
+      el('div', { class: 'card-list' },
+        el('div', { class: 'project-card' },
+          el('h3', {}, 'Projetos em Andamento'),
+          el('div', { class: 'meta' }, `Total: ${total}`),
+          el('div', { class: 'meta' }, `Concluídos: ${concluidos}`),
+          el('div', { class: 'meta' }, `Em andamento: ${emAndamento}`)
+        ),
+        el('div', { class: 'project-card' },
+          el('h3', {}, 'Prioridades'),
+          el('div', {},
+            porPrioridade.map(pri =>
+              el('span', { class: 'priority-badge ' + pri.class, style: 'margin-right:14px;' }, `${pri.label}: ${pri.count}`)
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// --- NOVO PROJETO ---
+function renderAdicionarProjeto() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  main.appendChild(
+    el('div', {},
+      el('h2', {}, 'Novo Projeto'),
+      el('form', { id: 'form-projeto' },
+        el('label', { for: 'titulo' }, 'Título'),
+        el('input', { id: 'titulo', name: 'titulo', required: true, maxlength: 64, autocomplete: 'off' }),
+        el('label', { for: 'descricao' }, 'Descrição'),
+        el('textarea', { id: 'descricao', name: 'descricao', rows: 3, maxlength: 240 }),
+        el('label', { for: 'responsavel' }, 'Responsável'),
+        el('input', { id: 'responsavel', name: 'responsavel', maxlength: 48 }),
+        el('label', { for: 'prioridade' }, 'Prioridade'),
+        el('select', { id: 'prioridade', name: 'prioridade', required: true },
+          PRIORIDADES.map(pri => el('option', { value: pri.value }, pri.label))
+        ),
+        el('div', { class: 'button-row' },
+          el('button', { class: 'btn', type: 'submit' }, 'Criar Projeto')
+        )
+      )
+    )
+  );
+  document.getElementById('form-projeto').onsubmit = e => {
+    e.preventDefault();
+    const titulo = document.getElementById('titulo').value.trim();
+    const descricao = document.getElementById('descricao').value.trim();
+    const responsavel = document.getElementById('responsavel').value.trim();
+    const prioridade = document.getElementById('prioridade').value;
+    if (!titulo) return showToast('Título é obrigatório');
+    const projetos = getProjetos();
+    projetos.push({
+      id: gerarId(),
+      titulo,
+      descricao,
+      responsavel,
+      prioridade,
+      dataCriacao: Date.now(),
+      etapas: [],
+    });
+    setProjetos(projetos);
+    showToast('Projeto criado!');
+    setSection('acompanhar');
   };
-  document.getElementById('filtro-status').onchange = function() {
-    renderIdeiasList();
-  };
-  carregarIdeias();
 }
 
-async function carregarIdeias() {
-  showToast("Carregando ideias...");
-  const snap = await db.collection('ideias').orderBy('criadoEm', 'desc').get();
-  allIdeias = [];
-  snap.forEach(doc => {
-    allIdeias.push({ id: doc.id, ...doc.data() });
-  });
-  renderIdeiasList();
-  showToast("Ideias carregadas!", "success");
-}
+// --- DESENHAR/EDITAR PROJETO ---
+function renderEditarProjeto(id) {
+  const projetos = getProjetos();
+  const projeto = projetos.find(p => p.id === id);
+  if (!projeto) return showToast('Projeto não encontrado');
 
-function renderIdeiasList() {
-  const list = document.getElementById('ideias-list');
-  if (!list) return;
-  let ideias = allIdeias;
-  const filtro = document.getElementById('filtro-status').value;
-  if (filtro) ideias = ideias.filter(i => i.status === filtro);
-  if (filtroBusca) ideias = ideias.filter(i => i.titulo.toLowerCase().includes(filtroBusca) || i.descricao.toLowerCase().includes(filtroBusca));
-  if (ideias.length === 0) {
-    list.innerHTML = `<div style="color:var(--muted);margin:28px 0 0 0;text-align:center;">Nenhuma ideia encontrada.</div>`;
-    return;
+  function salvarEAtualizar() {
+    setProjetos(projetos);
+    renderEditarProjeto(id);
   }
-  list.innerHTML = "";
-  ideias.forEach(ideia => {
-    const etapas = ideia.etapas || [];
-    const feitas = etapas.filter(e => e.done).length;
-    const progresso = etapas.length ? Math.round(100 * feitas / etapas.length) : 0;
-    const card = document.createElement('div');
-    card.className = "idea-card";
-    card.tabIndex = 0;
-    card.innerHTML = `
-      <div class="card-actions">
-        <button class="card-action-btn" title="Detalhes" onclick="abrirDetalhe('${ideia.id}',event)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-        </button>
-        <button class="card-action-btn" title="Editar" onclick="editarIdeia('${ideia.id}',event)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-        </button>
-        <button class="card-action-btn" title="Excluir" onclick="excluirIdeia('${ideia.id}',event)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-      </div>
-      <h3>${ideia.titulo}</h3>
-      <div class="meta">Responsável: ${ideia.responsavel}</div>
-      <div class="meta">${ideia.descricao}</div>
-      <div class="progress-bar"><div class="progress-bar-inner" style="width:${progresso}%;"></div></div>
-      <small style="color:${ideia.status==='concluída'? 'var(--success)': ideia.status==='em andamento'? 'var(--primary-accent)':'var(--muted)'};font-weight:600;">
-        ${ideia.status.replace('em andamento', 'Em andamento').replace('planejando', 'Planejando').replace('concluída','Concluída')}
-      </small>
-      <ul class="etapas-lista">
-        ${etapas.map((etapa, idx) => `
-          <li class="${etapa.done ? 'done' : ''}">
-            <span class="etapa-info">
-              <b>${etapa.nome}</b> (${etapa.quem})<br>
-              <span style="font-size:.97em;color:var(--muted);">Prazo: ${etapa.prazo}</span>
-            </span>
-            <span class="etapa-status">
-              <input type="checkbox" ${etapa.done ? "checked" : ""} onchange="toggleEtapa('${ideia.id}',${idx},this.checked,event)" />
-              ${etapa.done ? "Feito" : "Pendente"}
-            </span>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-    list.appendChild(card);
-  });
+
+  // Modal para adicionar nova etapa
+  function modalNovaEtapa() {
+    openModal(
+      el('div', {},
+        el('button', { class: 'modal-close', onclick: closeModal }, '×'),
+        el('h2', {}, 'Nova Etapa'),
+        el('form', { id: 'form-etapa' },
+          el('label', { for: 'etapa-titulo' }, 'Título da Etapa'),
+          el('input', { id: 'etapa-titulo', required: true, maxlength: 52 }),
+          el('label', { for: 'etapa-responsavel' }, 'Responsável'),
+          el('input', { id: 'etapa-responsavel', maxlength: 48 }),
+          el('label', { for: 'etapa-prazo' }, 'Prazo'),
+          el('input', { id: 'etapa-prazo', type: 'date' }),
+          el('div', { class: 'button-row' },
+            el('button', { class: 'btn', type: 'submit' }, 'Adicionar')
+          )
+        )
+      )
+    );
+    document.getElementById('form-etapa').onsubmit = e => {
+      e.preventDefault();
+      const titulo = document.getElementById('etapa-titulo').value.trim();
+      if (!titulo) return showToast('Título obrigatório');
+      projeto.etapas.push({
+        id: gerarId(),
+        titulo,
+        responsavel: document.getElementById('etapa-responsavel').value.trim(),
+        prazo: document.getElementById('etapa-prazo').value,
+        concluida: false,
+      });
+      salvarEAtualizar();
+      closeModal();
+      showToast('Etapa adicionada');
+    };
+  }
+
+  // Modal para editar etapa
+  function modalEditarEtapa(etapa) {
+    openModal(
+      el('div', {},
+        el('button', { class: 'modal-close', onclick: closeModal }, '×'),
+        el('h2', {}, 'Editar Etapa'),
+        el('form', { id: 'form-editar-etapa' },
+          el('label', { for: 'etapa-titulo' }, 'Título da Etapa'),
+          el('input', { id: 'etapa-titulo', required: true, maxlength: 52, value: etapa.titulo }),
+          el('label', { for: 'etapa-responsavel' }, 'Responsável'),
+          el('input', { id: 'etapa-responsavel', maxlength: 48, value: etapa.responsavel }),
+          el('label', { for: 'etapa-prazo' }, 'Prazo'),
+          el('input', { id: 'etapa-prazo', type: 'date', value: etapa.prazo }),
+          el('div', { class: 'button-row' },
+            el('button', { class: 'btn', type: 'submit' }, 'Salvar'),
+            el('button', { class: 'btn danger', type: 'button', onclick: () => { 
+              if (confirm('Remover esta etapa?')) {
+                projeto.etapas = projeto.etapas.filter(e => e.id !== etapa.id);
+                salvarEAtualizar();
+                closeModal();
+                showToast('Etapa removida');
+              }
+            } }, 'Remover')
+          )
+        )
+      )
+    );
+    document.getElementById('form-editar-etapa').onsubmit = e => {
+      e.preventDefault();
+      etapa.titulo = document.getElementById('etapa-titulo').value.trim();
+      etapa.responsavel = document.getElementById('etapa-responsavel').value.trim();
+      etapa.prazo = document.getElementById('etapa-prazo').value;
+      salvarEAtualizar();
+      closeModal();
+      showToast('Etapa atualizada');
+    };
+  }
+
+  // Modal para editar dados do projeto
+  function modalEditarProjeto() {
+    openModal(
+      el('div', {},
+        el('button', { class: 'modal-close', onclick: closeModal }, '×'),
+        el('h2', {}, 'Editar Projeto'),
+        el('form', { id: 'form-editar-projeto' },
+          el('label', { for: 'projeto-titulo' }, 'Título'),
+          el('input', { id: 'projeto-titulo', required: true, maxlength: 64, value: projeto.titulo }),
+          el('label', { for: 'projeto-descricao' }, 'Descrição'),
+          el('textarea', { id: 'projeto-descricao', rows: 3, maxlength: 240 }, projeto.descricao),
+          el('label', { for: 'projeto-responsavel' }, 'Responsável'),
+          el('input', { id: 'projeto-responsavel', maxlength: 48, value: projeto.responsavel }),
+          el('label', { for: 'projeto-prioridade' }, 'Prioridade'),
+          el('select', { id: 'projeto-prioridade' },
+            PRIORIDADES.map(pri => 
+              el('option', { value: pri.value, selected: projeto.prioridade === pri.value }, pri.label)
+            )
+          ),
+          el('div', { class: 'button-row' },
+            el('button', { class: 'btn', type: 'submit' }, 'Salvar')
+          )
+        )
+      )
+    );
+    document.getElementById('form-editar-projeto').onsubmit = e => {
+      e.preventDefault();
+      projeto.titulo = document.getElementById('projeto-titulo').value.trim();
+      projeto.descricao = document.getElementById('projeto-descricao').value.trim();
+      projeto.responsavel = document.getElementById('projeto-responsavel').value.trim();
+      projeto.prioridade = document.getElementById('projeto-prioridade').value;
+      salvarEAtualizar();
+      closeModal();
+      showToast('Projeto atualizado');
+    };
+  }
+
+  // Modal para remover projeto
+  function modalRemoverProjeto() {
+    openModal(
+      el('div', {},
+        el('button', { class: 'modal-close', onclick: closeModal }, '×'),
+        el('h2', {}, 'Remover Projeto'),
+        el('p', {}, 'Tem certeza que deseja remover este projeto? Esta ação não pode ser desfeita.'),
+        el('div', { class: 'button-row' },
+          el('button', { class: 'btn danger', onclick: () => {
+            setProjetos(projetos.filter(p => p.id !== id));
+            closeModal();
+            showToast('Projeto removido');
+            setSection('acompanhar');
+          } }, 'Remover'),
+          el('button', { class: 'btn', onclick: closeModal }, 'Cancelar')
+        )
+      )
+    );
+  }
+
+  // Progresso
+  const totalEtapas = projeto.etapas.length;
+  const concluido = projeto.etapas.filter(e => e.concluida).length;
+  const progresso = totalEtapas ? Math.round((concluido / totalEtapas) * 100) : 0;
+
+  // Renderização
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  main.appendChild(
+    el('div', {},
+      el('div', { style: 'display:flex;justify-content:space-between;align-items:center;' },
+        el('h2', {}, 'Projeto: ', projeto.titulo),
+        el('div', {},
+          el('button', { class: 'btn', onclick: modalEditarProjeto, style: 'margin-right:10px;' }, 'Editar Projeto'),
+          el('button', { class: 'btn danger', onclick: modalRemoverProjeto }, 'Remover')
+        )
+      ),
+      el('div', { class: 'project-card', style: 'margin-bottom:18px;' },
+        el('div', { class: 'meta' }, 'Responsável: ', projeto.responsavel || '—'),
+        el('div', { class: 'meta' }, 'Prioridade: ',
+          el('span', { class: 'priority-badge ' + PRIORIDADES.find(p => p.value === projeto.prioridade).class },
+            PRIORIDADES.find(p => p.value === projeto.prioridade).label
+          )
+        ),
+        el('div', { class: 'meta' }, 'Criado em: ', (new Date(projeto.dataCriacao)).toLocaleDateString()),
+        el('div', { class: 'meta' }, projeto.descricao),
+        el('div', { class: 'progress-bar', title: progresso + '%' },
+          el('div', { class: 'progress-bar-inner', style: `width:${progresso}%;background:${progresso===100?'var(--success)':'var(--accent)'};` })
+        ),
+        el('div', { style: 'margin-top:8px;font-size:.98em;color:var(--secondary);' },
+          `Etapas concluídas: ${concluido} / ${totalEtapas}`
+        )
+      ),
+      el('h3', {}, 'Etapas'),
+      el('ul', { class: 'etapas-lista' },
+        projeto.etapas.length ?
+          projeto.etapas.map(etapa =>
+            el('li', { class: etapa.concluida ? 'done' : '' },
+              el('div', { class: 'etapa-info' },
+                el('span', {}, etapa.titulo),
+                el('span', { style: 'font-size:.97em;color:var(--secondary);' },
+                  etapa.responsavel ? `Resp.: ${etapa.responsavel}` : '',
+                  etapa.prazo ? ` | Prazo: ${(new Date(etapa.prazo)).toLocaleDateString()}` : ''
+                )
+              ),
+              el('div', { class: 'etapa-status' },
+                el('label', {},
+                  el('input', {
+                    type: 'checkbox',
+                    checked: etapa.concluida,
+                    onchange: () => {
+                      etapa.concluida = !etapa.concluida;
+                      salvarEAtualizar();
+                      showToast(etapa.concluida ? 'Etapa concluída!' : 'Etapa marcada como pendente');
+                    }
+                  }),
+                  etapa.concluida ? 'Concluída' : 'Pendente'
+                ),
+                el('button', {
+                  class: 'card-action-btn',
+                  title: 'Editar Etapa',
+                  onclick: () => modalEditarEtapa(etapa)
+                }, '✎')
+              )
+            )
+          )
+          :
+          el('li', { style: 'color:var(--muted);' }, 'Nenhuma etapa cadastrada.')
+      ),
+      el('div', { style: 'margin-top:18px;' },
+        el('button', { class: 'btn', onclick: modalNovaEtapa }, 'Adicionar Etapa')
+      ),
+      el('div', { style: 'margin-top:34px;' },
+        el('button', { class: 'btn', onclick: () => setSection('acompanhar') }, 'Voltar')
+      )
+    )
+  );
 }
 
-window.toggleEtapa = async function(ideiaId, etapaIdx, checked, event) {
-  event.stopPropagation();
-  const docRef = db.collection('ideias').doc(ideiaId);
-  const doc = await docRef.get();
-  if (!doc.exists) return;
-  const ideia = doc.data();
-  ideia.etapas[etapaIdx].done = checked;
-  // Se todas etapas feitas, marcar como concluída
-  let status = ideia.status;
-  if (ideia.etapas.length && ideia.etapas.every(e => e.done)) status = 'concluída';
-  else if (ideia.etapas.some(e => e.done)) status = 'em andamento';
-  else status = 'planejando';
-  await docRef.update({ etapas: ideia.etapas, status });
-  carregarIdeias();
-};
+// --- ACOMPANHAMENTO ---
+function renderAcompanhamento() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+  const projetos = getProjetos();
 
-window.abrirDetalhe = function(ideiaId, event) {
-  event.stopPropagation();
-  const ideia = allIdeias.find(i => i.id === ideiaId);
-  if (!ideia) return;
-  modalContent.innerHTML = `
-    <button class="modal-close" onclick="fecharModal()">×</button>
-    <h2 style="margin-bottom:10px;">${ideia.titulo}</h2>
-    <div style="color:var(--secondary);margin-bottom:8px;">${ideia.descricao}</div>
-    <div class="meta">Responsável: ${ideia.responsavel}</div>
-    <div style="margin:12px 0 12px 0;">
-      <b>Status:</b> ${ideia.status.replace('em andamento', 'Em andamento').replace('planejando', 'Planejando').replace('concluída','Concluída')}
-    </div>
-    <div class="progress-bar"><div class="progress-bar-inner" style="width:${((ideia.etapas||[]).filter(e=>e.done).length/(ideia.etapas||[]).length||0)*100}%;"></div></div>
-    <h4 style="margin:14px 0 6px 0;font-size:1.07em;">Etapas:</h4>
-    <ul class="etapas-lista">
-      ${(ideia.etapas||[]).map(etapa=>`
-        <li class="${etapa.done ? 'done' : ''}">
-          <span class="etapa-info">
-            <b>${etapa.nome}</b> (${etapa.quem})<br>
-            <span style="font-size:.97em;color:var(--secondary);">Prazo: ${etapa.prazo}</span>
-          </span>
-          <span class="etapa-status">${etapa.done ? "Feito" : "Pendente"}</span>
-        </li>
-      `).join("")}
-    </ul>
-  `;
-  modalOverlay.style.display = "flex";
-};
-window.fecharModal = function() { modalOverlay.style.display = "none"; };
+  // Filtros e ordenação
+  let filtro = '';
+  let ordem = 'prioridade';
 
-window.editarIdeia = async function(ideiaId, event) {
-  event.stopPropagation();
-  const doc = await db.collection('ideias').doc(ideiaId).get();
-  if (!doc.exists) return;
-  ideiaTemp = { id: doc.id, ...doc.data() };
-  showPlanejamento(true);
-};
+  function atualizarLista() {
+    let lista = [...getProjetos()];
+    if (filtro) {
+      const f = filtro.toLowerCase();
+      lista = lista.filter(p =>
+        p.titulo.toLowerCase().includes(f) ||
+        (p.descricao && p.descricao.toLowerCase().includes(f)) ||
+        (p.responsavel && p.responsavel.toLowerCase().includes(f))
+      );
+    }
+    if (ordem === 'prioridade') {
+      const prioridadeOrder = { alta: 0, media: 1, leve: 2 };
+      lista.sort((a, b) => {
+        if (prioridadeOrder[a.prioridade] !== prioridadeOrder[b.prioridade])
+          return prioridadeOrder[a.prioridade] - prioridadeOrder[b.prioridade];
+        return b.dataCriacao - a.dataCriacao;
+      });
+    } else if (ordem === 'data') {
+      lista.sort((a, b) => b.dataCriacao - a.dataCriacao);
+    }
+    renderLista(lista);
+  }
 
-window.excluirIdeia = function(ideiaId, event) {
-  event.stopPropagation();
-  modalContent.innerHTML = `
-    <button class="modal-close" onclick="fecharModal()">×</button>
-    <h3 style="margin-bottom:12px;">Excluir ideia?</h3>
-    <div style="color:var(--secondary);margin-bottom:18px;">Essa ação é irreversível.</div>
-    <div style="display:flex;gap:14px;">
-      <button class="btn danger" onclick="confirmarExcluir('${ideiaId}')">Excluir</button>
-      <button class="btn" onclick="fecharModal()">Cancelar</button>
-    </div>
-  `;
-  modalOverlay.style.display = "flex";
-};
-window.confirmarExcluir = async function(ideiaId) {
-  await db.collection('ideias').doc(ideiaId).delete();
-  fecharModal();
-  showToast("Ideia excluída!", "success");
-  carregarIdeias();
-};
+  function renderLista(lista) {
+    const cards = lista.length ?
+      lista.map(projeto => {
+        const totalEtapas = projeto.etapas.length;
+        const concluidas = projeto.etapas.filter(e => e.concluida).length;
+        const progresso = totalEtapas ? Math.round((concluidas / totalEtapas) * 100) : 0;
+        const prioridade = PRIORIDADES.find(p => p.value === projeto.prioridade);
+        return el('div', { class: 'project-card' },
+          el('div', { class: 'card-actions' },
+            el('button', {
+              class: 'card-action-btn',
+              title: 'Editar Projeto',
+              onclick: () => renderEditarProjeto(projeto.id)
+            }, '✎')
+          ),
+          el('h3', {}, projeto.titulo),
+          el('div', { class: 'meta' }, 'Responsável: ', projeto.responsavel || '—'),
+          el('div', { class: 'meta' }, 'Criado em: ', (new Date(projeto.dataCriacao)).toLocaleDateString()),
+          el('div', { class: 'meta' }, el('span', { class: 'priority-badge ' + prioridade.class }, prioridade.label)),
+          el('div', { class: 'meta' }, projeto.descricao),
+          el('div', { class: 'progress-bar', title: progresso + '%' },
+            el('div', { class: 'progress-bar-inner', style: `width:${progresso}%;background:${progresso===100?'var(--success)':'var(--accent)'};` })
+          ),
+          el('div', { style: 'margin-top:8px;font-size:.98em;color:var(--secondary);' },
+            `Etapas concluídas: ${concluidas} / ${totalEtapas}`
+          ),
+          el('ul', { class: 'etapas-lista', style: 'margin-top:12px;' },
+            projeto.etapas.slice(0, 2).map(etapa =>
+              el('li', { class: etapa.concluida ? 'done' : '' },
+                el('div', { class: 'etapa-info' },
+                  el('span', {}, etapa.titulo),
+                  el('span', { style: 'font-size:.97em;color:var(--secondary);' },
+                    etapa.responsavel ? `Resp.: ${etapa.responsavel}` : '',
+                    etapa.prazo ? ` | Prazo: ${(new Date(etapa.prazo)).toLocaleDateString()}` : ''
+                  )
+                )
+              )
+            )
+          )
+        );
+      })
+      :
+      el('div', { style: 'color:var(--muted);margin-top:26px;' }, 'Nenhum projeto encontrado.');
+    const container = document.getElementById('acompanhar-lista');
+    container.innerHTML = '';
+    if (Array.isArray(cards)) cards.forEach(c => container.appendChild(c));
+    else container.appendChild(cards);
+  }
 
-modalOverlay.onclick = function(e) {
-  if (e.target === modalOverlay) fecharModal();
-};
-document.onkeydown = function(e) {
-  if (modalOverlay.style.display === "flex" && (e.key === "Escape" || e.key === "Esc")) fecharModal();
-};
+  main.appendChild(
+    el('div', {},
+      el('h2', {}, 'Acompanhamento de Projetos'),
+      el('div', { style: 'display:flex;gap:18px;margin-bottom:18px;align-items:center;' },
+        el('input', {
+          type: 'search',
+          placeholder: 'Buscar projeto, responsável...',
+          style: 'max-width:260px;',
+          oninput: e => { filtro = e.target.value; atualizarLista(); }
+        }),
+        el('select', {
+          onchange: e => { ordem = e.target.value; atualizarLista(); }
+        },
+          el('option', { value: 'prioridade' }, 'Ordenar por Prioridade'),
+          el('option', { value: 'data' }, 'Ordenar por Data')
+        ),
+        el('button', { class: 'btn', onclick: () => setSection('adicionar') }, '+ Novo Projeto')
+      ),
+      el('div', { id: 'acompanhar-lista', class: 'card-list' })
+    )
+  );
+  atualizarLista();
+}
 
-window.carregarIdeias = carregarIdeias;
+// --- EVENTOS DE NAVEGAÇÃO ---
+document.getElementById('menu-dashboard').onclick = () => setSection('dashboard');
+document.getElementById('menu-adicionar').onclick = () => setSection('adicionar');
+document.getElementById('menu-acompanhar').onclick = () => setSection('acompanhar');
 
-// SPA: mantém navegação fluida
-window.onpopstate = function() {
-  if (currentPage === "nova") showNovaIdeia();
-  else showAcompanhamento();
-};
+// --- INICIALIZAÇÃO ---
+setSection('dashboard');
