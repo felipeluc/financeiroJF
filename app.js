@@ -5,6 +5,7 @@ class ProjectManager {
         this.currentProject = null;
         this.currentDate = new Date();
         this.selectedDate = null;
+        this.dailyTasks = this.loadDailyTasks(); // Nova propriedade para tarefas diárias
         
         // Novas propriedades para filtros e paginação
         this.filters = {
@@ -216,6 +217,17 @@ class ProjectManager {
 
         document.getElementById('proximoMes').addEventListener('click', () => {
             this.changeMonth(1);
+        });
+
+        // Tarefas diárias
+        document.getElementById('addTaskBtn').addEventListener('click', () => {
+            this.addDailyTask();
+        });
+
+        document.getElementById('newTaskInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addDailyTask();
+            }
         });
 
         // Fechar modais clicando fora
@@ -891,108 +903,70 @@ class ProjectManager {
                 if (isSelected) {
                     cell.classList.add('selected');
                 }
-
-                // Verificar etapas do dia e adicionar indicadores
-                const daySteps = this.getStepsForDate(currentDate);
-                if (daySteps.length > 0) {
+                
+                // Verificar se há eventos neste dia
+                if (this.hasEventsOnDate(currentDate)) {
                     cell.classList.add('has-events');
-                    
-                    // Determinar a prioridade dominante para o indicador
-                    const priorities = daySteps.map(step => {
-                        const project = this.projects.find(p => p.id === step.projectId);
-                        return project ? project.prioridade : 'leve';
-                    });
-                    
-                    const priorityClass = this.getDominantPriority(priorities);
-                    cell.classList.add(`priority-${priorityClass}`);
-
-                    // Adicionar eventos de tooltip
-                    this.addTooltipEvents(cell, currentDate, daySteps);
                 }
-
-                // Adicionar botão de adição rápida
-                if (isCurrentMonth) {
-                    const addBtn = document.createElement('button');
-                    addBtn.className = 'calendar-add-btn';
-                    addBtn.innerHTML = '+';
-                    addBtn.title = 'Adicionar etapa';
-                    addBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        this.showQuickAddStep(currentDate);
-                    };
-                    cell.appendChild(addBtn);
-                }
-
-                // Evento de clique no dia
+                
+                // Event listeners
                 cell.addEventListener('click', () => {
                     this.selectDate(currentDate);
                 });
-
+                
+                // Tooltip para eventos
+                const events = this.getEventsForDate(currentDate);
+                if (events.length > 0) {
+                    cell.addEventListener('mouseenter', (e) => {
+                        this.showTooltip(e, currentDate, events);
+                    });
+                    
+                    cell.addEventListener('mouseleave', () => {
+                        this.hideTooltip();
+                    });
+                }
+                
                 row.appendChild(cell);
             }
             
             calendarBody.appendChild(row);
         }
+        
+        // Renderizar eventos do dia selecionado
+        this.renderCalendarEvents();
+        this.renderDailyTasks();
     }
 
     isToday(date) {
         const today = new Date();
-        return date.toDateString() === today.toDateString();
+        return date.getDate() === today.getDate() &&
+               date.getMonth() === today.getMonth() &&
+               date.getFullYear() === today.getFullYear();
     }
 
     isSameDate(date1, date2) {
-        return date1.toDateString() === date2.toDateString();
+        return date1.getDate() === date2.getDate() &&
+               date1.getMonth() === date2.getMonth() &&
+               date1.getFullYear() === date2.getFullYear();
     }
 
-    getStepsForDate(date) {
+    getEventsForDate(date) {
         const dateString = date.toISOString().split('T')[0];
-        const steps = [];
-        
+        const events = [];
+
         this.projects.forEach(project => {
             project.etapas.forEach(step => {
                 if (step.prazo && step.prazo.startsWith(dateString)) {
-                    steps.push({
-                        ...step,
-                        projectId: project.id
+                    events.push({
+                        step,
+                        projectId: project.id,
+                        projectTitle: project.titulo
                     });
                 }
             });
         });
-        
-        return steps;
-    }
 
-    getDominantPriority(priorities) {
-        const counts = { alta: 0, media: 0, leve: 0 };
-        priorities.forEach(p => counts[p]++);
-        
-        if (counts.alta > 0 && (counts.media > 0 || counts.leve > 0)) {
-            return 'mixed';
-        } else if (counts.alta > 0) {
-            return 'alta';
-        } else if (counts.media > 0 && counts.leve > 0) {
-            return 'mixed';
-        } else if (counts.media > 0) {
-            return 'media';
-        } else {
-            return 'leve';
-        }
-    }
-
-    addTooltipEvents(cell, date, steps) {
-        const tooltip = document.getElementById('calendarTooltip');
-        
-        cell.addEventListener('mouseenter', (e) => {
-            this.showTooltip(e, date, steps);
-        });
-        
-        cell.addEventListener('mouseleave', () => {
-            this.hideTooltip();
-        });
-        
-        cell.addEventListener('mousemove', (e) => {
-            this.updateTooltipPosition(e);
-        });
+        return events;
     }
 
     showTooltip(event, date, steps) {
@@ -1047,18 +1021,6 @@ class ProjectManager {
         tooltip.style.top = `${top}px`;
     }
 
-    showQuickAddStep(date) {
-        // Pré-preencher a data no modal de etapa
-        this.selectedDate = date;
-        this.showStepModal();
-        
-        // Pré-preencher o campo de prazo
-        const prazoInput = document.getElementById('etapaPrazo');
-        if (prazoInput) {
-            prazoInput.value = date.toISOString().split('T')[0];
-        }
-    }
-
     changeMonth(direction) {
         this.currentDate.setMonth(this.currentDate.getMonth() + direction);
         this.renderCalendar();
@@ -1079,7 +1041,6 @@ class ProjectManager {
 
         // Re-renderizar calendário para mostrar seleção
         this.renderCalendar();
-        this.renderCalendarEvents();
     }
 
     hasEventsOnDate(date) {
@@ -1125,6 +1086,119 @@ class ProjectManager {
                 <div class="event-meta">
                     Responsável: ${event.step.responsavel || 'Não informado'} | 
                     ${event.step.observacao || 'Sem observações'}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Gerenciamento de Tarefas Diárias
+    loadDailyTasks() {
+        const stored = localStorage.getItem('daily_tasks');
+        return stored ? JSON.parse(stored) : {};
+    }
+
+    saveDailyTasks() {
+        localStorage.setItem('daily_tasks', JSON.stringify(this.dailyTasks));
+    }
+
+    getDateKey(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    addDailyTask() {
+        if (!this.selectedDate) {
+            this.showToast('Selecione um dia no calendário primeiro!', 'warning');
+            return;
+        }
+
+        const input = document.getElementById('newTaskInput');
+        const taskText = input.value.trim();
+
+        if (!taskText) {
+            this.showToast('Digite o texto da tarefa!', 'warning');
+            return;
+        }
+
+        const dateKey = this.getDateKey(this.selectedDate);
+        
+        if (!this.dailyTasks[dateKey]) {
+            this.dailyTasks[dateKey] = [];
+        }
+
+        const newTask = {
+            id: this.generateId(),
+            text: taskText,
+            completed: false,
+            createdAt: new Date().toISOString()
+        };
+
+        this.dailyTasks[dateKey].push(newTask);
+        this.saveDailyTasks();
+        
+        input.value = '';
+        this.renderDailyTasks();
+        this.showToast('Tarefa adicionada com sucesso!');
+    }
+
+    toggleTaskCompletion(taskId) {
+        if (!this.selectedDate) return;
+
+        const dateKey = this.getDateKey(this.selectedDate);
+        const tasks = this.dailyTasks[dateKey];
+        
+        if (!tasks) return;
+
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            this.saveDailyTasks();
+            this.renderDailyTasks();
+        }
+    }
+
+    removeTask(taskId) {
+        if (!this.selectedDate) return;
+
+        const dateKey = this.getDateKey(this.selectedDate);
+        const tasks = this.dailyTasks[dateKey];
+        
+        if (!tasks) return;
+
+        this.dailyTasks[dateKey] = tasks.filter(t => t.id !== taskId);
+        this.saveDailyTasks();
+        this.renderDailyTasks();
+        this.showToast('Tarefa removida com sucesso!');
+    }
+
+    renderDailyTasks() {
+        const container = document.getElementById('tasksList');
+        const addSection = document.getElementById('addTaskSection');
+        
+        if (!this.selectedDate) {
+            container.innerHTML = '<p>Selecione um dia para gerenciar suas tarefas.</p>';
+            addSection.style.display = 'none';
+            return;
+        }
+
+        addSection.style.display = 'flex';
+        
+        const dateKey = this.getDateKey(this.selectedDate);
+        const tasks = this.dailyTasks[dateKey] || [];
+
+        if (tasks.length === 0) {
+            container.innerHTML = '<p>Nenhuma tarefa para este dia. Adicione uma nova tarefa abaixo.</p>';
+            return;
+        }
+
+        container.innerHTML = tasks.map(task => `
+            <div class="task-item ${task.completed ? 'completed' : ''}">
+                <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                       onchange="projectManager.toggleTaskCompletion('${task.id}')">
+                <span class="task-text">${task.text}</span>
+                <div class="task-actions">
+                    <button onclick="projectManager.removeTask('${task.id}')" title="Remover tarefa">
+                        ×
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -1354,6 +1428,8 @@ window.projectManager = {
     editStep: (id) => projectManager.editStep(id),
     removeStep: (id) => projectManager.removeStep(id),
     toggleStepCompletion: (id) => projectManager.toggleStepCompletion(id),
-    selectDate: (date) => projectManager.selectDate(date)
+    selectDate: (date) => projectManager.selectDate(date),
+    toggleTaskCompletion: (id) => projectManager.toggleTaskCompletion(id),
+    removeTask: (id) => projectManager.removeTask(id)
 };
 
