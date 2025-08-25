@@ -145,61 +145,61 @@ document.addEventListener('submit', function (e) {
 
 function gerarPDF(projetos) {
   if (!window.jspdf || !window.jspdf.jsPDF || !window.jspdf.autoTable) {
-    showToast('jsPDF ou autoTable não carregados!');
+    showToast('jsPDF ou autoTable não carregados! Verifique a conexão.');
     return;
   }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('p', 'pt');
   let y = 36;
 
-  // Título
+  // Título principal (bonito e centralizado)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.text('Gestão de Projetos', 38, y, { baseline: 'top' });
-  y += 28;
+  y += 40; // Espaço maior para layout clean
 
   projetos.forEach((projeto, idx) => {
-    if (idx > 0) y += 18;
+    if (idx > 0) y += 24;
     // Cabeçalho do Projeto
-    doc.setFontSize(15);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(projeto.titulo, 38, y);
-    y += 18;
+    y += 24;
 
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     const prioridade = PRIORIDADES.find(p => p.value === projeto.prioridade);
-    doc.setTextColor(80, 80, 80);
+    doc.setTextColor(50, 50, 50); // Cinza escuro para texto
     doc.text([
       `Responsável: ${projeto.responsavel || '—'}`,
       `Prioridade: ${prioridade.label}`,
       `Criado em: ${(new Date(projeto.dataCriacao)).toLocaleDateString()}`
     ], 38, y);
-    y += 34;
+    y += 40;
 
     if (projeto.descricao) {
       doc.setFont('helvetica', 'italic');
-      doc.setTextColor(60, 60, 60);
+      doc.setTextColor(70, 70, 70);
       doc.text(projeto.descricao, 38, y, { maxWidth: 520 });
-      y += 22;
+      y += 28;
     }
 
-    // Badge Prioridade (visual)
+    // Badge Prioridade (visual bonito)
     doc.setFillColor(prioridade.color);
-    doc.roundedRect(440, y - 30, 80, 26, 7, 7, 'F');
+    doc.roundedRect(440, y - 36, 80, 26, 7, 7, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.setTextColor(prioridade.text);
-    doc.text(prioridade.label, 480, y - 14, { align: 'center' });
+    doc.text(prioridade.label, 480, y - 18, { align: 'center' });
 
-    // Etapas
+    // Etapas (tabela clean)
     if (projeto.etapas && projeto.etapas.length) {
-      y += 6;
-      doc.setTextColor(40, 40, 40);
+      y += 12;
+      doc.setTextColor(30, 30, 30);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
+      doc.setFontSize(14);
       doc.text('Etapas:', 38, y);
-      y += 7;
+      y += 12;
 
       const rows = projeto.etapas.map(etapa => [
         etapa.titulo,
@@ -218,30 +218,33 @@ function gerarPDF(projetos) {
           fontSize: 10,
           textColor: [32, 32, 32],
           halign: 'left',
-          cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+          cellPadding: { top: 4, right: 5, bottom: 4, left: 5 },
+          lineColor: [200, 200, 200], // Bordas cinza claro
+          lineWidth: 0.5
         },
         headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [60, 60, 60],
+          fillColor: [240, 240, 240], // Cabeçalho cinza claro
+          textColor: [50, 50, 50],
           fontStyle: 'bold',
+          lineWidth: 0.5
         },
         alternateRowStyles: { fillColor: [252, 252, 252] },
         rowPageBreak: 'avoid'
       });
-      y = doc.lastAutoTable.finalY + 18;
+      y = doc.lastAutoTable.finalY + 24;
     } else {
-      y += 8;
+      y += 12;
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(11);
-      doc.setTextColor(180, 180, 180);
+      doc.setFontSize(12);
+      doc.setTextColor(150, 150, 150);
       doc.text('Nenhuma etapa cadastrada.', 38, y);
-      y += 14;
+      y += 20;
     }
 
     doc.setTextColor(0, 0, 0);
-    doc.setDrawColor(220, 220, 220);
+    doc.setDrawColor(200, 200, 200); // Linha cinza clara
     doc.line(32, y, 570, y);
-    y += 24;
+    y += 28;
     if (y > 700 && idx < projetos.length - 1) {
       doc.addPage();
       y = 36;
@@ -627,19 +630,19 @@ function renderAcompanhamento() {
   atualizarLista();
 }
 
-// ---- CALENDÁRIO ----
+// ---- CALENDÁRIO (com select por projetos ou tarefas) ----
 function renderCalendario() {
   const main = document.getElementById('main-content');
   main.innerHTML = '';
   let hoje = new Date();
   let mes = hoje.getMonth();
   let ano = hoje.getFullYear();
-  let modo = 'tarefas'; // ou 'projetos'
+  let modo = 'tarefas'; // Padrão: por tarefas
 
   function renderMes() {
     main.innerHTML = '';
     main.appendChild(
-      el('h2', {}, 'Calendário'),
+      el('h2', {}, 'Calendário de Projetos e Tarefas'),
       el('div', { style: 'display:flex;align-items:center;gap:18px;margin-bottom:16px;' },
         el('button', { class: 'btn secondary', onclick: () => { mes--; if (mes < 0) { mes = 11; ano--; } renderMes(); } }, '‹'),
         el('span', { style: 'font-size:1.12em;font-weight:600;' }, `${mesNome(mes)} / ${ano}`),
@@ -696,7 +699,7 @@ function renderCalendario() {
         });
       });
       if (!etapasDoDia.length) {
-        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhuma etapa agendada.'));
+        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhuma tarefa agendada.'));
       } else {
         agenda.appendChild(
           el('ul', { class: 'etapas-lista' },
@@ -718,13 +721,12 @@ function renderCalendario() {
           )
         );
       }
-    } else {
-      // Por projetos
+    } else if (modo === 'projetos') {
       let projetosDoDia = projetos.filter(proj =>
         proj.etapas.some(et => et.prazo === dataStr)
       );
       if (!projetosDoDia.length) {
-        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhum projeto com etapas neste dia.'));
+        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhum projeto com tarefas neste dia.'));
       } else {
         projetosDoDia.forEach(proj => {
           agenda.appendChild(
