@@ -17,6 +17,16 @@
     --warning-color: #ffc107;
     --danger-color: #dc3545;
     
+    /* Cores do calendário - padrão preto, branco e cinza */
+    --calendar-bg: #ffffff;
+    --calendar-border: #ddd;
+    --calendar-header-bg: #f8f9fa;
+    --calendar-today-bg: #333;
+    --calendar-selected-bg: #666;
+    --calendar-hover-bg: #f8f9fa;
+    --calendar-other-month: #ccc;
+    --calendar-event-dot: #333;
+    
     /* Espaçamentos */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -253,11 +263,12 @@ body {
     transform: rotate(180deg);
 }
 
+/* Filtros avançados - inicialmente ocultos */
 .advanced-filters {
     background: white;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
+    padding: 0;
     margin-top: var(--spacing-md);
     max-height: 0;
     overflow: hidden;
@@ -339,10 +350,6 @@ body {
 .view-toggle.active {
     background-color: var(--primary-color);
     color: white;
-}
-
-.view-toggle span:first-child {
-    font-size: var(--font-xs);
 }
 
 /* Container dos projetos */
@@ -671,10 +678,10 @@ body {
     min-height: 100px;
 }
 
-/* Botões */
+/* Botões - removidos emojis e aplicado estilo mais sóbrio */
 .btn {
     padding: var(--spacing-md) var(--spacing-lg);
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--border-radius);
     font-size: var(--font-md);
     font-weight: 500;
@@ -683,36 +690,43 @@ body {
     text-decoration: none;
     display: inline-block;
     text-align: center;
+    background: none;
 }
 
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
+    border-color: var(--primary-color);
 }
 
 .btn-primary:hover {
     background-color: #222;
+    border-color: #222;
 }
 
 .btn-secondary {
     background-color: #6c757d;
     color: white;
+    border-color: #6c757d;
 }
 
 .btn-secondary:hover {
     background-color: #5a6268;
+    border-color: #5a6268;
 }
 
 .btn-danger {
     background-color: var(--danger-color);
     color: white;
+    border-color: var(--danger-color);
 }
 
 .btn-danger:hover {
     background-color: #c82333;
+    border-color: #c82333;
 }
 
-/* Calendário */
+/* Calendário - cores ajustadas para preto, branco e cinza */
 .calendar-header {
     display: flex;
     justify-content: space-between;
@@ -726,10 +740,10 @@ body {
 }
 
 .calendar-container {
-    background: white;
+    background: var(--calendar-bg);
     border-radius: var(--border-radius-lg);
     box-shadow: 0 2px 4px var(--shadow-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--calendar-border);
     overflow: hidden;
     margin-bottom: var(--spacing-xl);
 }
@@ -740,41 +754,44 @@ body {
 }
 
 .calendar th {
-    background-color: #f8f9fa;
+    background-color: var(--calendar-header-bg);
     padding: var(--spacing-md);
     text-align: center;
     font-weight: 600;
     color: var(--primary-color);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--calendar-border);
 }
 
 .calendar td {
     padding: var(--spacing-md);
     text-align: center;
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--calendar-border);
+    border-right: 1px solid var(--calendar-border);
     cursor: pointer;
     transition: var(--transition);
     height: 60px;
     vertical-align: top;
+    background-color: var(--calendar-bg);
+    color: var(--text-color);
 }
 
 .calendar td:hover {
-    background-color: #f8f9fa;
+    background-color: var(--calendar-hover-bg);
 }
 
 .calendar td.today {
-    background-color: var(--primary-color);
+    background-color: var(--calendar-today-bg);
     color: white;
 }
 
 .calendar td.selected {
-    background-color: var(--priority-leve);
+    background-color: var(--calendar-selected-bg);
     color: white;
 }
 
 .calendar td.other-month {
-    color: #ccc;
+    color: var(--calendar-other-month);
+    background-color: #f8f9fa;
 }
 
 .calendar td.has-events {
@@ -789,24 +806,8 @@ body {
     transform: translateX(-50%);
     width: 6px;
     height: 6px;
-    background-color: var(--priority-alta);
+    background-color: var(--calendar-event-dot);
     border-radius: 50%;
-}
-
-.calendar td.has-events.priority-alta::after {
-    background-color: var(--priority-alta);
-}
-
-.calendar td.has-events.priority-media::after {
-    background-color: var(--priority-media);
-}
-
-.calendar td.has-events.priority-leve::after {
-    background-color: var(--priority-leve);
-}
-
-.calendar td.has-events.priority-mixed::after {
-    background: linear-gradient(45deg, var(--priority-alta) 33%, var(--priority-media) 33%, var(--priority-media) 66%, var(--priority-leve) 66%);
 }
 
 /* Tooltip do calendário */
@@ -866,34 +867,6 @@ body {
     background-color: var(--priority-leve);
 }
 
-/* Botão de adição rápida no calendário */
-.calendar-add-btn {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 10px;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.calendar td:hover .calendar-add-btn {
-    opacity: 1;
-}
-
-.calendar-add-btn:hover {
-    background: #222;
-}
-
 .calendar-events {
     background: white;
     padding: var(--spacing-lg);
@@ -930,6 +903,86 @@ body {
 .event-meta {
     font-size: var(--font-xs);
     color: var(--secondary-color);
+}
+
+/* Seção de tarefas diárias */
+.daily-tasks {
+    margin-top: var(--spacing-xl);
+    background: white;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+.daily-tasks h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--primary-color);
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--border-color);
+}
+
+.task-item.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+    border-left-color: var(--success-color);
+}
+
+.task-item input[type="checkbox"] {
+    margin-right: var(--spacing-sm);
+}
+
+.task-item .task-text {
+    flex: 1;
+    font-size: var(--font-sm);
+}
+
+.task-item .task-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.task-item .task-actions button {
+    padding: var(--spacing-xs);
+    font-size: var(--font-xs);
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--secondary-color);
+    border-radius: var(--border-radius);
+}
+
+.task-item .task-actions button:hover {
+    background-color: #e9ecef;
+    color: var(--primary-color);
+}
+
+.add-task-section {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.task-input {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: var(--font-sm);
+}
+
+.task-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.1);
 }
 
 /* Detalhes do projeto */
@@ -1119,7 +1172,9 @@ body {
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
     border-top: 1px solid var(--border-color);
-}/* Toast de Notificação */
+}
+
+/* Toast de Notificação */
 .toast {
     position: fixed;
     bottom: var(--spacing-xl);
@@ -1145,6 +1200,13 @@ body {
     opacity: 1;
 }
 
+.toast-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    flex: 1;
+}
+
 .toast-icon {
     width: 24px;
     height: 24px;
@@ -1158,7 +1220,7 @@ body {
     flex-shrink: 0;
 }
 
-.toast-content {
+.toast-text {
     flex: 1;
 }
 
@@ -1243,7 +1305,9 @@ body {
 
 .toast.info .toast-title {
     color: var(--priority-leve);
-}ões */
+}
+
+/* Animações */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
