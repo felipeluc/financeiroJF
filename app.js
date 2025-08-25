@@ -6,6 +6,25 @@ class ProjectManager {
         this.currentDate = new Date();
         this.selectedDate = null;
         
+        // Novas propriedades para filtros e paginação
+        this.filters = {
+            text: '',
+            priority: '',
+            status: '',
+            responsible: ''
+        };
+        this.sorting = {
+            field: 'prioridade',
+            direction: 'desc'
+        };
+        this.pagination = {
+            currentPage: 1,
+            pageSize: 10,
+            totalPages: 1
+        };
+        this.currentView = 'cards'; // 'cards' ou 'table'
+        this.filteredProjects = [];
+        
         this.init();
     }
 
@@ -111,9 +130,83 @@ class ProjectManager {
             this.showStepModal();
         });
 
-        // Filtro de projetos
+        // Filtros básicos
         document.getElementById('filtroTexto').addEventListener('input', (e) => {
-            this.filterProjects(e.target.value);
+            this.filters.text = e.target.value;
+            this.applyFilters();
+        });
+
+        // Filtros avançados
+        document.getElementById('toggleAdvancedFilters').addEventListener('click', () => {
+            this.toggleAdvancedFilters();
+        });
+
+        document.getElementById('filtroPrioridade').addEventListener('change', (e) => {
+            this.filters.priority = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('filtroStatus').addEventListener('change', (e) => {
+            this.filters.status = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('filtroResponsavel').addEventListener('change', (e) => {
+            this.filters.responsible = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('ordenarPor').addEventListener('change', (e) => {
+            this.sorting.field = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('direcaoOrdem').addEventListener('change', (e) => {
+            this.sorting.direction = e.target.value;
+            this.applyFilters();
+        });
+
+        document.getElementById('limparFiltros').addEventListener('click', () => {
+            this.clearFilters();
+        });
+
+        // Visualização
+        document.getElementById('viewCards').addEventListener('click', () => {
+            this.setView('cards');
+        });
+
+        document.getElementById('viewTable').addEventListener('click', () => {
+            this.setView('table');
+        });
+
+        // Paginação
+        document.getElementById('prevPage').addEventListener('click', () => {
+            this.changePage(this.pagination.currentPage - 1);
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            this.changePage(this.pagination.currentPage + 1);
+        });
+
+        document.getElementById('pageSize').addEventListener('change', (e) => {
+            this.pagination.pageSize = parseInt(e.target.value);
+            this.pagination.currentPage = 1;
+            this.applyFilters();
+        });
+
+        // Ordenação por cabeçalhos da tabela
+        document.querySelectorAll('.table th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.dataset.sort;
+                if (this.sorting.field === field) {
+                    this.sorting.direction = this.sorting.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sorting.field = field;
+                    this.sorting.direction = 'asc';
+                }
+                this.applyFilters();
+                this.updateTableHeaders();
+            });
         });
 
         // Calendário
@@ -129,6 +222,26 @@ class ProjectManager {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 e.target.classList.remove('show');
+            }
+        });
+
+        // Fechar toast
+        document.getElementById('toastClose').addEventListener('click', () => {
+            this.hideToast();
+        });
+
+        // Acessibilidade - fechar modais com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Fechar toast
+                if (document.getElementById('toast').classList.contains('show')) {
+                    this.hideToast();
+                }
+                
+                // Fechar modais
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
             }
         });
     }
@@ -162,6 +275,188 @@ class ProjectManager {
             link.classList.remove('active');
         });
         activeLink.classList.add('active');
+    }
+
+    // Filtros e Ordenação
+    toggleAdvancedFilters() {
+        const filtersDiv = document.getElementById('advancedFilters');
+        const toggleBtn = document.getElementById('toggleAdvancedFilters');
+        
+        filtersDiv.classList.toggle('show');
+        toggleBtn.classList.toggle('active');
+        
+        if (filtersDiv.classList.contains('show')) {
+            this.populateResponsibleFilter();
+        }
+    }
+
+    populateResponsibleFilter() {
+        const select = document.getElementById('filtroResponsavel');
+        const responsibles = [...new Set(this.projects
+            .map(p => p.responsavel)
+            .filter(r => r && r.trim())
+        )].sort();
+
+        select.innerHTML = '<option value="">Todos</option>' +
+            responsibles.map(r => `<option value="${r}">${r}</option>`).join('');
+    }
+
+    applyFilters() {
+        let filtered = [...this.projects];
+
+        // Filtro de texto
+        if (this.filters.text) {
+            const searchTerm = this.filters.text.toLowerCase();
+            filtered = filtered.filter(project => 
+                project.titulo.toLowerCase().includes(searchTerm) ||
+                (project.descricao && project.descricao.toLowerCase().includes(searchTerm)) ||
+                (project.responsavel && project.responsavel.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        // Filtro de prioridade
+        if (this.filters.priority) {
+            filtered = filtered.filter(project => project.prioridade === this.filters.priority);
+        }
+
+        // Filtro de status
+        if (this.filters.status) {
+            filtered = filtered.filter(project => {
+                const progress = this.calculateProgress(project);
+                if (this.filters.status === 'concluido') {
+                    return progress === 100;
+                } else if (this.filters.status === 'andamento') {
+                    return progress < 100;
+                }
+                return true;
+            });
+        }
+
+        // Filtro de responsável
+        if (this.filters.responsible) {
+            filtered = filtered.filter(project => project.responsavel === this.filters.responsible);
+        }
+
+        // Ordenação
+        filtered.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (this.sorting.field) {
+                case 'titulo':
+                    valueA = a.titulo.toLowerCase();
+                    valueB = b.titulo.toLowerCase();
+                    break;
+                case 'responsavel':
+                    valueA = (a.responsavel || '').toLowerCase();
+                    valueB = (b.responsavel || '').toLowerCase();
+                    break;
+                case 'data':
+                    valueA = new Date(a.dataCriacao);
+                    valueB = new Date(b.dataCriacao);
+                    break;
+                case 'progresso':
+                    valueA = this.calculateProgress(a);
+                    valueB = this.calculateProgress(b);
+                    break;
+                case 'prioridade':
+                default:
+                    const priorityOrder = { alta: 3, media: 2, leve: 1 };
+                    valueA = priorityOrder[a.prioridade];
+                    valueB = priorityOrder[b.prioridade];
+                    break;
+            }
+
+            if (valueA < valueB) return this.sorting.direction === 'asc' ? -1 : 1;
+            if (valueA > valueB) return this.sorting.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        this.filteredProjects = filtered;
+        this.updatePagination();
+        this.renderCurrentView();
+        this.updateProjectsCount();
+    }
+
+    clearFilters() {
+        this.filters = {
+            text: '',
+            priority: '',
+            status: '',
+            responsible: ''
+        };
+
+        document.getElementById('filtroTexto').value = '';
+        document.getElementById('filtroPrioridade').value = '';
+        document.getElementById('filtroStatus').value = '';
+        document.getElementById('filtroResponsavel').value = '';
+
+        this.applyFilters();
+    }
+
+    // Visualização
+    setView(view) {
+        this.currentView = view;
+        
+        document.querySelectorAll('.view-toggle').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`view${view.charAt(0).toUpperCase() + view.slice(1)}`).classList.add('active');
+
+        this.renderCurrentView();
+    }
+
+    renderCurrentView() {
+        if (this.currentView === 'cards') {
+            this.renderProjectCards();
+        } else {
+            this.renderProjectTable();
+        }
+    }
+
+    // Paginação
+    updatePagination() {
+        this.pagination.totalPages = Math.ceil(this.filteredProjects.length / this.pagination.pageSize);
+        
+        if (this.pagination.currentPage > this.pagination.totalPages) {
+            this.pagination.currentPage = Math.max(1, this.pagination.totalPages);
+        }
+
+        this.updatePaginationControls();
+    }
+
+    updatePaginationControls() {
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        const info = document.getElementById('paginationInfo');
+
+        prevBtn.disabled = this.pagination.currentPage <= 1;
+        nextBtn.disabled = this.pagination.currentPage >= this.pagination.totalPages;
+
+        info.textContent = `Página ${this.pagination.currentPage} de ${this.pagination.totalPages}`;
+    }
+
+    changePage(page) {
+        if (page >= 1 && page <= this.pagination.totalPages) {
+            this.pagination.currentPage = page;
+            this.renderCurrentView();
+            this.updatePaginationControls();
+        }
+    }
+
+    getPaginatedProjects() {
+        const start = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+        const end = start + this.pagination.pageSize;
+        return this.filteredProjects.slice(start, end);
+    }
+
+    updateProjectsCount() {
+        const count = this.filteredProjects.length;
+        const total = this.projects.length;
+        const countText = count === total ? 
+            `${count} projeto${count !== 1 ? 's' : ''}` :
+            `${count} de ${total} projeto${total !== 1 ? 's' : ''}`;
+        
+        document.getElementById('projectsCount').textContent = countText;
     }
 
     // Gerenciamento de Projetos
@@ -392,25 +687,28 @@ class ProjectManager {
 
     // Acompanhar Projetos
     renderProjects() {
+        this.applyFilters();
+    }
+
+    renderProjectCards() {
         const container = document.getElementById('projectsList');
+        const tableContainer = document.getElementById('projectsTable');
         
-        if (this.projects.length === 0) {
-            container.innerHTML = '<p>Nenhum projeto cadastrado ainda.</p>';
+        container.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        
+        const projects = this.getPaginatedProjects();
+        
+        if (projects.length === 0) {
+            container.innerHTML = '<p>Nenhum projeto encontrado com os filtros aplicados.</p>';
             return;
         }
 
-        // Ordenar por prioridade e data
-        const sortedProjects = [...this.projects].sort((a, b) => {
-            const priorityOrder = { alta: 3, media: 2, leve: 1 };
-            const priorityDiff = priorityOrder[b.prioridade] - priorityOrder[a.prioridade];
-            if (priorityDiff !== 0) return priorityDiff;
-            return new Date(b.dataCriacao) - new Date(a.dataCriacao);
-        });
-
-        container.innerHTML = sortedProjects.map(project => {
+        container.innerHTML = projects.map(project => {
             const progress = this.calculateProgress(project);
             const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
             const visibleSteps = project.etapas.slice(0, 2);
+            const hasMoreSteps = project.etapas.length > 2;
 
             return `
                 <div class="project-card" onclick="projectManager.showProjectDetails('${project.id}')">
@@ -438,6 +736,11 @@ class ProjectManager {
                                     ${step.titulo}
                                 </div>
                             `).join('')}
+                            ${hasMoreSteps ? `
+                                <button class="expand-steps" onclick="event.stopPropagation(); projectManager.showProjectDetails('${project.id}')">
+                                    Ver todas as ${project.etapas.length} etapas
+                                </button>
+                            ` : ''}
                         </div>
                     ` : ''}
                 </div>
@@ -445,21 +748,64 @@ class ProjectManager {
         }).join('');
     }
 
-    filterProjects(searchTerm) {
-        const cards = document.querySelectorAll('.project-card');
-        const term = searchTerm.toLowerCase();
+    renderProjectTable() {
+        const container = document.getElementById('projectsList');
+        const tableContainer = document.getElementById('projectsTable');
+        const tableBody = document.getElementById('projectsTableBody');
+        
+        container.classList.add('hidden');
+        tableContainer.classList.remove('hidden');
+        
+        const projects = this.getPaginatedProjects();
+        
+        if (projects.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum projeto encontrado com os filtros aplicados.</td></tr>';
+            return;
+        }
 
-        cards.forEach(card => {
-            const title = card.querySelector('.project-title').textContent.toLowerCase();
-            const description = card.querySelector('.project-description').textContent.toLowerCase();
-            const responsible = card.querySelector('.project-meta').textContent.toLowerCase();
+        tableBody.innerHTML = projects.map(project => {
+            const progress = this.calculateProgress(project);
+            const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
 
-            if (title.includes(term) || description.includes(term) || responsible.includes(term)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
+            return `
+                <tr onclick="projectManager.showProjectDetails('${project.id}')" style="cursor: pointer;">
+                    <td>${project.titulo}</td>
+                    <td>${project.responsavel || 'Não informado'}</td>
+                    <td><span class="priority-badge ${project.prioridade}">${project.prioridade.toUpperCase()}</span></td>
+                    <td>
+                        <div class="table-progress">
+                            <div class="table-progress-bar">
+                                <div class="table-progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="table-progress-text">${progress}%</span>
+                        </div>
+                    </td>
+                    <td>${creationDate}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); projectManager.showProjectDetails('${project.id}')">Ver</button>
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); projectManager.editProjectFromTable('${project.id}')">Editar</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        this.updateTableHeaders();
+    }
+
+    updateTableHeaders() {
+        document.querySelectorAll('.table th.sortable').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (th.dataset.sort === this.sorting.field) {
+                th.classList.add(`sort-${this.sorting.direction}`);
             }
         });
+    }
+
+    editProjectFromTable(projectId) {
+        this.currentProject = this.projects.find(p => p.id === projectId);
+        this.showEditModal();
     }
 
     // Modal Editar Projeto
@@ -501,55 +847,216 @@ class ProjectManager {
 
     // Calendário
     renderCalendar() {
-        const calendarBody = document.getElementById('calendarBody');
-        const monthYear = document.getElementById('mesAno');
-
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
+        
+        // Atualizar título
+        const monthNames = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        document.getElementById('mesAno').textContent = `${monthNames[month]} ${year}`;
 
-        monthYear.textContent = new Date(year, month).toLocaleDateString('pt-BR', { 
-            month: 'long', 
-            year: 'numeric' 
-        });
-
+        // Calcular dias do mês
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-        const today = new Date();
-        const calendar = [];
+        const calendarBody = document.getElementById('calendarBody');
+        calendarBody.innerHTML = '';
 
+        // Gerar 6 semanas
         for (let week = 0; week < 6; week++) {
-            const weekRow = [];
+            const row = document.createElement('tr');
+            
             for (let day = 0; day < 7; day++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + (week * 7) + day);
                 
+                const cell = document.createElement('td');
+                cell.textContent = currentDate.getDate();
+                
+                // Classes CSS
                 const isCurrentMonth = currentDate.getMonth() === month;
-                const isToday = currentDate.toDateString() === today.toDateString();
-                const hasEvents = this.hasEventsOnDate(currentDate);
+                const isToday = this.isToday(currentDate);
+                const isSelected = this.selectedDate && this.isSameDate(currentDate, this.selectedDate);
+                
+                if (!isCurrentMonth) {
+                    cell.classList.add('other-month');
+                }
+                if (isToday) {
+                    cell.classList.add('today');
+                }
+                if (isSelected) {
+                    cell.classList.add('selected');
+                }
 
-                weekRow.push({
-                    date: currentDate,
-                    isCurrentMonth,
-                    isToday,
-                    hasEvents
+                // Verificar etapas do dia e adicionar indicadores
+                const daySteps = this.getStepsForDate(currentDate);
+                if (daySteps.length > 0) {
+                    cell.classList.add('has-events');
+                    
+                    // Determinar a prioridade dominante para o indicador
+                    const priorities = daySteps.map(step => {
+                        const project = this.projects.find(p => p.id === step.projectId);
+                        return project ? project.prioridade : 'leve';
+                    });
+                    
+                    const priorityClass = this.getDominantPriority(priorities);
+                    cell.classList.add(`priority-${priorityClass}`);
+
+                    // Adicionar eventos de tooltip
+                    this.addTooltipEvents(cell, currentDate, daySteps);
+                }
+
+                // Adicionar botão de adição rápida
+                if (isCurrentMonth) {
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'calendar-add-btn';
+                    addBtn.innerHTML = '+';
+                    addBtn.title = 'Adicionar etapa';
+                    addBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.showQuickAddStep(currentDate);
+                    };
+                    cell.appendChild(addBtn);
+                }
+
+                // Evento de clique no dia
+                cell.addEventListener('click', () => {
+                    this.selectDate(currentDate);
                 });
-            }
-            calendar.push(weekRow);
-        }
 
-        calendarBody.innerHTML = calendar.map(week => `
-            <tr>
-                ${week.map(day => `
-                    <td class="${day.isCurrentMonth ? '' : 'other-month'} ${day.isToday ? 'today' : ''} ${day.hasEvents ? 'has-events' : ''}"
-                        onclick="projectManager.selectDate('${day.date.toISOString()}')">
-                        ${day.date.getDate()}
-                    </td>
-                `).join('')}
-            </tr>
-        `).join('');
+                row.appendChild(cell);
+            }
+            
+            calendarBody.appendChild(row);
+        }
+    }
+
+    isToday(date) {
+        const today = new Date();
+        return date.toDateString() === today.toDateString();
+    }
+
+    isSameDate(date1, date2) {
+        return date1.toDateString() === date2.toDateString();
+    }
+
+    getStepsForDate(date) {
+        const dateString = date.toISOString().split('T')[0];
+        const steps = [];
+        
+        this.projects.forEach(project => {
+            project.etapas.forEach(step => {
+                if (step.prazo && step.prazo.startsWith(dateString)) {
+                    steps.push({
+                        ...step,
+                        projectId: project.id
+                    });
+                }
+            });
+        });
+        
+        return steps;
+    }
+
+    getDominantPriority(priorities) {
+        const counts = { alta: 0, media: 0, leve: 0 };
+        priorities.forEach(p => counts[p]++);
+        
+        if (counts.alta > 0 && (counts.media > 0 || counts.leve > 0)) {
+            return 'mixed';
+        } else if (counts.alta > 0) {
+            return 'alta';
+        } else if (counts.media > 0 && counts.leve > 0) {
+            return 'mixed';
+        } else if (counts.media > 0) {
+            return 'media';
+        } else {
+            return 'leve';
+        }
+    }
+
+    addTooltipEvents(cell, date, steps) {
+        const tooltip = document.getElementById('calendarTooltip');
+        
+        cell.addEventListener('mouseenter', (e) => {
+            this.showTooltip(e, date, steps);
+        });
+        
+        cell.addEventListener('mouseleave', () => {
+            this.hideTooltip();
+        });
+        
+        cell.addEventListener('mousemove', (e) => {
+            this.updateTooltipPosition(e);
+        });
+    }
+
+    showTooltip(event, date, steps) {
+        const tooltip = document.getElementById('calendarTooltip');
+        const dateStr = date.toLocaleDateString('pt-BR');
+        
+        const content = `
+            <h4>${dateStr}</h4>
+            ${steps.map(step => {
+                const project = this.projects.find(p => p.id === step.projectId);
+                const priority = project ? project.prioridade : 'leve';
+                return `
+                    <div class="calendar-tooltip-item">
+                        <div class="calendar-tooltip-priority ${priority}"></div>
+                        <div>
+                            <strong>${step.titulo}</strong><br>
+                            <small>${project ? project.titulo : 'Projeto não encontrado'}</small>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        `;
+        
+        tooltip.innerHTML = content;
+        tooltip.classList.add('show');
+        this.updateTooltipPosition(event);
+    }
+
+    hideTooltip() {
+        const tooltip = document.getElementById('calendarTooltip');
+        tooltip.classList.remove('show');
+    }
+
+    updateTooltipPosition(event) {
+        const tooltip = document.getElementById('calendarTooltip');
+        const rect = tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let left = event.pageX + 10;
+        let top = event.pageY - 10;
+        
+        // Ajustar se sair da viewport
+        if (left + rect.width > viewportWidth) {
+            left = event.pageX - rect.width - 10;
+        }
+        if (top + rect.height > viewportHeight) {
+            top = event.pageY - rect.height - 10;
+        }
+        
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    }
+
+    showQuickAddStep(date) {
+        // Pré-preencher a data no modal de etapa
+        this.selectedDate = date;
+        this.showStepModal();
+        
+        // Pré-preencher o campo de prazo
+        const prazoInput = document.getElementById('etapaPrazo');
+        if (prazoInput) {
+            prazoInput.value = date.toISOString().split('T')[0];
+        }
     }
 
     changeMonth(direction) {
@@ -557,17 +1064,21 @@ class ProjectManager {
         this.renderCalendar();
     }
 
-    selectDate(dateString) {
-        this.selectedDate = new Date(dateString);
-        
+    selectDate(date) {
         // Remover seleção anterior
         document.querySelectorAll('.calendar td.selected').forEach(td => {
             td.classList.remove('selected');
         });
 
-        // Adicionar seleção atual
-        event.target.classList.add('selected');
+        // Definir nova data selecionada
+        if (typeof date === 'string') {
+            this.selectedDate = new Date(date);
+        } else {
+            this.selectedDate = date;
+        }
 
+        // Re-renderizar calendário para mostrar seleção
+        this.renderCalendar();
         this.renderCalendarEvents();
     }
 
@@ -761,16 +1272,61 @@ class ProjectManager {
         return Math.round((completed / project.etapas.length) * 100);
     }
 
-    showToast(message) {
+    showToast(message, type = 'success', title = null, duration = 3000) {
         const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastTitle = document.getElementById('toastTitle');
         const toastMessage = document.getElementById('toastMessage');
         
+        // Limpar classes anteriores
+        toast.className = 'toast';
+        
+        // Configurar conteúdo baseado no tipo
+        const config = {
+            success: {
+                icon: '✓',
+                title: title || 'Sucesso',
+                class: 'success'
+            },
+            error: {
+                icon: '✕',
+                title: title || 'Erro',
+                class: 'error'
+            },
+            warning: {
+                icon: '⚠',
+                title: title || 'Atenção',
+                class: 'warning'
+            },
+            info: {
+                icon: 'ℹ',
+                title: title || 'Informação',
+                class: 'info'
+            }
+        };
+        
+        const currentConfig = config[type] || config.success;
+        
+        // Aplicar configuração
+        toast.classList.add(currentConfig.class);
+        toastIcon.textContent = currentConfig.icon;
+        toastTitle.textContent = currentConfig.title;
         toastMessage.textContent = message;
+        
+        // Mostrar toast
         toast.classList.add('show');
         
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+        // Auto-hide após duração especificada
+        if (duration > 0) {
+            setTimeout(() => {
+                this.hideToast();
+            }, duration);
+        }
+    }
+
+    hideToast() {
+        const toast = document.getElementById('toast');
+        toast.classList.remove('show');
     }
 
     // Persistência
