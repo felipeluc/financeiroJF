@@ -3,13 +3,13 @@
   --accent: #3b82f6;
   --success: #16a34a;
   --danger: #e74c3c;
-  --bg: #f4f6fa;
-  --card: #fff;
-  --muted: #b0b8c9;
-  --secondary: #555a6a;
+  --bg: #ffffff; /* Fundo branco principal */
+  --card: #ffffff; /* Cards brancos */
+  --muted: #b0b8c9; /* Cinza para textos secundários */
+  --secondary: #555a6a; /* Cinza escuro */
   --border: #e0e4ef;
   --radius: 10px;
-  --shadow: 0 2px 10px 0 #23294612;
+  --shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1); /* Sombra suave em cinza */
   --font: 'Segoe UI', 'Roboto', Arial, sans-serif;
 }
 
@@ -26,7 +26,7 @@ body {
   position: fixed;
   left: 0; top: 0; bottom: 0;
   width: 210px;
-  background: #fff;
+  background: #ffffff; /* Sidebar branco */
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -37,7 +37,7 @@ body {
 .logo {
   font-size: 1.6em;
   font-weight: bold;
-  color: var(--accent);
+  color: #232427; /* Preto para logo */
   padding: 26px 0 24px 0;
   text-align: center;
   letter-spacing: 1.5px;
@@ -55,7 +55,7 @@ body {
   cursor: pointer;
 }
 .nav-btn.active, .nav-btn:hover {
-  background: #232427;
+  background: #232427; /* Preto para ativo/hover */
   color: #fff;
   font-weight: 600;
 }
@@ -64,12 +64,13 @@ main#main-content {
   margin-left: 210px;
   padding: 38px 36px 38px 36px;
   min-height: 100vh;
+  background: #ffffff; /* Fundo branco */
 }
 
 h2, h3 {
   margin: 0 0 18px 0;
   font-weight: 700;
-  color: var(--primary);
+  color: #232427; /* Preto para títulos */
 }
 
 .card-list {
@@ -147,7 +148,7 @@ h2, h3 {
 }
 
 .btn {
-  background: #232427;
+  background: #232427; /* Preto para botões principais */
   color: #fff;
   border: none;
   padding: 8px 22px;
@@ -159,7 +160,7 @@ h2, h3 {
 }
 .btn:hover { background: #111213; }
 .btn.secondary {
-  background: #b0b8c9;
+  background: #b0b8c9; /* Cinza para botões secundários */
   color: #232427;
 }
 .btn.secondary:hover {
@@ -176,7 +177,7 @@ input, textarea, select {
   margin-bottom: 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: #ffffff; /* Branco para inputs */
   color: var(--primary);
   box-sizing: border-box;
   font-family: var(--font);
@@ -191,7 +192,7 @@ ul.etapas-lista {
   margin: 0;
 }
 ul.etapas-lista li {
-  background: #f7f8fa;
+  background: #f7f8fa; /* Cinza claro para itens */
   border-radius: 7px;
   margin-bottom: 8px;
   padding: 10px 12px 10px 12px;
@@ -226,19 +227,19 @@ ul.etapas-lista li.done {
 #modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: #23294644;
+  background: rgba(0, 0, 0, 0.4); /* Overlay cinza escuro */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 500;
 }
 #modal-content {
-  background: #fff;
+  background: #ffffff; /* Branco para modal */
   border-radius: var(--radius);
   padding: 34px 32px 24px 32px;
   min-width: 320px;
   max-width: 98vw;
-  box-shadow: 0 6px 32px 0 #23294630;
+  box-shadow: 0 6px 32px 0 rgba(0, 0, 0, 0.2);
   position: relative;
 }
 .modal-close {
@@ -256,7 +257,7 @@ ul.etapas-lista li.done {
   position: fixed;
   bottom: 25px; right: 40px;
   min-width: 160px;
-  background: #232946;
+  background: #232427; /* Preto para toast */
   color: #fff;
   border-radius: 8px;
   padding: 13px 32px;
@@ -275,10 +276,10 @@ ul.etapas-lista li.done {
   border-collapse: collapse;
   width: 100%;
   margin-top: 14px;
-  background: #fff;
+  background: #ffffff; /* Branco para tabela */
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 10px #23294610;
+  box-shadow: var(--shadow);
   font-size: 1em;
 }
 .calendar-table th,
@@ -293,18 +294,18 @@ ul.etapas-lista li.done {
   cursor: pointer;
   transition: background .13s;
   font-weight: 500;
-  color: #232946;
+  color: #232427; /* Preto para dias */
   border-radius: 4px;
 }
 .calendar-day:hover {
-  background: var(--accent);
+  background: #b0b8c9; /* Cinza para hover */
   color: #fff;
 }
 .calendar-day.today {
   background: #f4d03f;
-  color: #232946;
+  color: #232427;
   font-weight: bold;
-  border: 2px solid var(--accent);
+  border: 2px solid #232427; /* Borda preta para hoje */
 }
 
 /* RESPONSIVO */
@@ -314,7 +315,7 @@ ul.etapas-lista li.done {
     flex-direction: row;
     height: 56px;
     left: 0; top: 0; right: 0; bottom: unset;
-    box-shadow: 0 2px 10px 0 #23294612;
+    box-shadow: var(--shadow);
     z-index: 100;
   }
   .logo { display: none; }
