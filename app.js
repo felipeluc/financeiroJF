@@ -1832,4 +1832,3 @@ window.projectManager = {
     toggleTaskCompletion: (id) => projectManager.toggleTaskCompletion(id),
     removeTask: (id) => projectManager.removeTask(id)
 };
-
