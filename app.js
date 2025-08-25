@@ -1,4 +1,4 @@
-// Professional Dev AI - Gestão de Projetos SaaS - app.js
+// Gestão de Projetos - app.js
 
 // ---- MODELO DE DADOS E UTILITÁRIOS ----
 const PRIORIDADES = [
@@ -437,7 +437,7 @@ function renderEditarProjeto(id) {
             showToast('Projeto removido');
             setSection('acompanhar');
           } }, 'Remover'),
-          el('button', { class: 'btn', onclick: closeModal }, 'Cancelar')
+          el('button', { class: 'btn secondary', onclick: closeModal }, 'Cancelar')
         )
       )
     );
@@ -515,7 +515,7 @@ function renderEditarProjeto(id) {
         el('button', { class: 'btn', onclick: modalNovaEtapa }, 'Adicionar Etapa')
       ),
       el('div', { style: 'margin-top:34px;' },
-        el('button', { class: 'btn', onclick: () => setSection('acompanhar') }, 'Voltar')
+        el('button', { class: 'btn secondary', onclick: () => setSection('acompanhar') }, 'Voltar')
       )
     )
   );
@@ -634,15 +634,23 @@ function renderCalendario() {
   let hoje = new Date();
   let mes = hoje.getMonth();
   let ano = hoje.getFullYear();
+  let modo = 'tarefas'; // ou 'projetos'
 
   function renderMes() {
     main.innerHTML = '';
     main.appendChild(
-      el('h2', {}, 'Calendário de Projetos e Etapas'),
+      el('h2', {}, 'Calendário'),
       el('div', { style: 'display:flex;align-items:center;gap:18px;margin-bottom:16px;' },
-        el('button', { class: 'btn', onclick: () => { mes--; if (mes < 0) { mes = 11; ano--; } renderMes(); } }, '‹'),
+        el('button', { class: 'btn secondary', onclick: () => { mes--; if (mes < 0) { mes = 11; ano--; } renderMes(); } }, '‹'),
         el('span', { style: 'font-size:1.12em;font-weight:600;' }, `${mesNome(mes)} / ${ano}`),
-        el('button', { class: 'btn', onclick: () => { mes++; if (mes > 11) { mes = 0; ano++; } renderMes(); } }, '›')
+        el('button', { class: 'btn secondary', onclick: () => { mes++; if (mes > 11) { mes = 0; ano++; } renderMes(); } }, '›'),
+        el('select', {
+          style: 'margin-left:32px;max-width:160px;',
+          onchange: (e) => { modo = e.target.value; renderMes(); }
+        },
+          el('option', { value: 'tarefas', selected: modo === 'tarefas' }, 'Por Tarefas'),
+          el('option', { value: 'projetos', selected: modo === 'projetos' }, 'Por Projetos')
+        )
       )
     );
 
@@ -677,39 +685,81 @@ function renderCalendario() {
 
   function mostrarAgendaDia(dataStr) {
     const projetos = getProjetos();
-    let etapasDoDia = [];
-    let projetosDoDia = [];
-    projetos.forEach(proj => {
-      proj.etapas.forEach(etapa => {
-        if (etapa.prazo === dataStr) etapasDoDia.push({ ...etapa, projeto: proj });
-      });
-      if (proj.etapas.some(et => et.prazo === dataStr)) projetosDoDia.push(proj);
-    });
-    const agenda = document.getElementById('calendar-agenda');
+    let agenda = document.getElementById('calendar-agenda');
     agenda.innerHTML = '';
     agenda.appendChild(el('h3', {}, `Itens para ${dataStr.split('-').reverse().join('/')}`));
-    if (!etapasDoDia.length) {
-      agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhuma etapa agendada.'));
-    } else {
-      agenda.appendChild(
-        el('ul', { class: 'etapas-lista' },
-          etapasDoDia.map(etapa =>
-            el('li', { class: etapa.concluida ? 'done' : '' },
-              el('div', { class: 'etapa-info' },
-                el('span', {}, etapa.titulo),
-                el('span', { style: 'font-size:.97em;color:var(--secondary);' },
-                  `Projeto: ${etapa.projeto.titulo}`,
-                  etapa.responsavel ? ` | Resp.: ${etapa.responsavel}` : ''
+    if (modo === 'tarefas') {
+      let etapasDoDia = [];
+      projetos.forEach(proj => {
+        proj.etapas.forEach(etapa => {
+          if (etapa.prazo === dataStr) etapasDoDia.push({ ...etapa, projeto: proj });
+        });
+      });
+      if (!etapasDoDia.length) {
+        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhuma etapa agendada.'));
+      } else {
+        agenda.appendChild(
+          el('ul', { class: 'etapas-lista' },
+            etapasDoDia.map(etapa =>
+              el('li', { class: etapa.concluida ? 'done' : '' },
+                el('div', { class: 'etapa-info' },
+                  el('span', {}, etapa.titulo),
+                  el('span', { style: 'font-size:.97em;color:var(--secondary);' },
+                    `Projeto: ${etapa.projeto.titulo}`,
+                    etapa.responsavel ? ` | Resp.: ${etapa.responsavel}` : ''
+                  ),
+                  etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
                 ),
-                etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
-              ),
-              el('div', { class: 'etapa-status' },
-                el('span', {}, etapa.concluida ? 'Concluída' : 'Pendente')
+                el('div', { class: 'etapa-status' },
+                  el('span', {}, etapa.concluida ? 'Concluída' : 'Pendente')
+                )
               )
             )
           )
-        )
+        );
+      }
+    } else {
+      // Por projetos
+      let projetosDoDia = projetos.filter(proj =>
+        proj.etapas.some(et => et.prazo === dataStr)
       );
+      if (!projetosDoDia.length) {
+        agenda.appendChild(el('div', { style: 'color:var(--muted);margin-top:14px;' }, 'Nenhum projeto com etapas neste dia.'));
+      } else {
+        projetosDoDia.forEach(proj => {
+          agenda.appendChild(
+            el('div', { class: 'project-card', style: 'margin-bottom:14px;' },
+              el('h3', {}, proj.titulo),
+              el('div', { class: 'meta' }, 'Responsável: ', proj.responsavel || '—'),
+              el('div', { class: 'meta' }, 'Prioridade: ',
+                el('span', { class: 'priority-badge ' + PRIORIDADES.find(p => p.value === proj.prioridade).class },
+                  PRIORIDADES.find(p => p.value === proj.prioridade).label
+                )
+              ),
+              el('div', { class: 'meta' }, 'Criado em: ', (new Date(proj.dataCriacao)).toLocaleDateString()),
+              el('div', { class: 'meta' }, proj.descricao),
+              el('ul', { class: 'etapas-lista', style: 'margin-top:10px;' },
+                proj.etapas
+                  .filter(et => et.prazo === dataStr)
+                  .map(etapa =>
+                    el('li', { class: etapa.concluida ? 'done' : '' },
+                      el('div', { class: 'etapa-info' },
+                        el('span', {}, etapa.titulo),
+                        el('span', { style: 'font-size:.97em;color:var(--secondary);' },
+                          etapa.responsavel ? `Resp.: ${etapa.responsavel}` : ''
+                        ),
+                        etapa.observacao ? el('span', { style: 'font-size:.98em;color:#888;margin-top:2px;' }, `Obs: ${etapa.observacao}`) : ''
+                      ),
+                      el('div', { class: 'etapa-status' },
+                        el('span', {}, etapa.concluida ? 'Concluída' : 'Pendente')
+                      )
+                    )
+                  )
+              )
+            )
+          );
+        });
+      }
     }
   }
 
