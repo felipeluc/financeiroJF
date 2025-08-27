@@ -4,10 +4,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão de Projetos</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- CDN jsPDF -->
+    <link rel="stylesheet" href="style(11).css">
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFyfqpl4rNBE4gIXllX7W66f43RSMaDCg",
+            authDomain: "gestaoprojetos-18968.firebaseapp.com",
+            projectId: "gestaoprojetos-18968",
+            storageBucket: "gestaoprojetos-18968.firebasestorage.app",
+            messagingSenderId: "862351920002",
+            appId: "1:862351920002:web:97405d73b4804c2cb85d9b"
+        };
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Serviço Firebase
+        window.firebaseService = {
+            // Projetos
+            async saveProjects(projects) {
+                try {
+                    await setDoc(doc(db, 'gestao', 'projects'), { data: projects });
+                    console.log('Projetos salvos no Firebase');
+                } catch (error) {
+                    console.error('Erro ao salvar projetos no Firebase:', error);
+                }
+            },
+            
+            async loadProjects() {
+                try {
+                    const docSnap = await getDoc(doc(db, 'gestao', 'projects'));
+                    if (docSnap.exists()) {
+                        return docSnap.data().data || [];
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Erro ao carregar projetos do Firebase:', error);
+                    return [];
+                }
+            },
+            
+            // Tarefas Diárias
+            async saveDailyTasks(tasks) {
+                try {
+                    await setDoc(doc(db, 'gestao', 'dailyTasks'), { data: tasks });
+                } catch (error) {
+                    console.error('Erro ao salvar tarefas diárias no Firebase:', error);
+                }
+            },
+            
+            async loadDailyTasks() {
+                try {
+                    const docSnap = await getDoc(doc(db, 'gestao', 'dailyTasks'));
+                    if (docSnap.exists()) {
+                        return docSnap.data().data || {};
+                    }
+                    return {};
+                } catch (error) {
+                    console.error('Erro ao carregar tarefas diárias do Firebase:', error);
+                    return {};
+                }
+            },
+            
+            // Ideias
+            async saveIdeas(ideas) {
+                try {
+                    await setDoc(doc(db, 'gestao', 'ideas'), { data: ideas });
+                } catch (error) {
+                    console.error('Erro ao salvar ideias no Firebase:', error);
+                }
+            },
+            
+            async loadIdeas() {
+                try {
+                    const docSnap = await getDoc(doc(db, 'gestao', 'ideas'));
+                    if (docSnap.exists()) {
+                        return docSnap.data().data || [];
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Erro ao carregar ideias do Firebase:', error);
+                    return [];
+                }
+            },
+            
+            // Reuniões
+            async saveMeetings(meetings) {
+                try {
+                    await setDoc(doc(db, 'gestao', 'meetings'), { data: meetings });
+                } catch (error) {
+                    console.error('Erro ao salvar reuniões no Firebase:', error);
+                }
+            },
+            
+            async loadMeetings() {
+                try {
+                    const docSnap = await getDoc(doc(db, 'gestao', 'meetings'));
+                    if (docSnap.exists()) {
+                        return docSnap.data().data || [];
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Erro ao carregar reuniões do Firebase:', error);
+                    return [];
+                }
+            },
+            
+            // Agenda
+            async saveAgenda(agenda) {
+                try {
+                    await setDoc(doc(db, 'gestao', 'agenda'), { data: agenda });
+                } catch (error) {
+                    console.error('Erro ao salvar agenda no Firebase:', error);
+                }
+            },
+            
+            async loadAgenda() {
+                try {
+                    const docSnap = await getDoc(doc(db, 'gestao', 'agenda'));
+                    if (docSnap.exists()) {
+                        return docSnap.data().data || [];
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Erro ao carregar agenda do Firebase:', error);
+                    return [];
+                }
+            }
+        };
+        
+        console.log('Firebase inicializado com sucesso');
+    </script>
+    
+    <script src="app(9).js"></script>
 </head>
 <body>
     <!-- Navegação -->
@@ -22,6 +160,7 @@
             <li><a href="#" data-section="adicionar" class="nav-link">Adicionar Projeto</a></li>
             <li><a href="#" data-section="ideias" class="nav-link">Ideias</a></li>
             <li><a href="#" data-section="reunioes" class="nav-link">Reuniões</a></li>
+            <li><a href="#" data-section="agenda" class="nav-link">Minha Agenda</a></li>
             <li><a href="#" data-section="calendario" class="nav-link">Calendário</a></li>
         </ul>
     </nav>
@@ -63,6 +202,7 @@
 
             <div class="pdf-section">
                 <button class="btn btn-primary" id="gerarPdfBtn">Gerar PDF</button>
+                <button class="btn btn-success" id="gerarExcelBtn">Gerar Excel</button>
             </div>
         </section>
 
@@ -238,6 +378,88 @@
             </div>
         </section>
 
+        <!-- Reuniões -->
+        <section id="reunioes" class="section">
+            <h1>Reuniões</h1>
+            <div class="meetings-header">
+                <div class="add-meeting-section">
+                    <div class="add-meeting-form">
+                        <input type="text" id="newMeetingTitle" placeholder="Título da reunião..." class="meeting-input">
+                        <textarea id="newMeetingDescription" placeholder="Descrição da reunião..." class="meeting-textarea" rows="2"></textarea>
+                        <div class="meeting-form-row">
+                            <input type="datetime-local" id="newMeetingDate" class="meeting-date">
+                            <select id="newMeetingProject" class="meeting-project">
+                                <option value="">Projeto relacionado (opcional)</option>
+                            </select>
+                            <input type="text" id="newMeetingLocation" placeholder="Local/Link..." class="meeting-location">
+                        </div>
+                        <button class="btn btn-primary" id="addMeetingBtn">Agendar Reunião</button>
+                    </div>
+                </div>
+            </div>
+            <div class="meetings-container" id="meetingsContainer">
+                <!-- Cards de reuniões serão inseridos aqui -->
+            </div>
+        </section>
+
+        <!-- Minha Agenda -->
+        <section id="agenda" class="section">
+            <h1>Minha Agenda</h1>
+            <div class="agenda-header">
+                <div class="add-agenda-section">
+                    <div class="add-agenda-form">
+                        <input type="text" id="newAgendaTitle" placeholder="Título do compromisso..." class="agenda-input">
+                        <textarea id="newAgendaDescription" placeholder="Descrição..." class="agenda-textarea" rows="2"></textarea>
+                        <div class="agenda-form-row">
+                            <input type="datetime-local" id="newAgendaDate" class="agenda-date">
+                            <select id="newAgendaType" class="agenda-type">
+                                <option value="compromisso">Compromisso</option>
+                                <option value="reuniao">Reunião</option>
+                                <option value="projeto">Foco em Projeto</option>
+                                <option value="pessoal">Pessoal</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                            <select id="newAgendaProject" class="agenda-project">
+                                <option value="">Projeto relacionado (opcional)</option>
+                            </select>
+                        </div>
+                        <div class="agenda-notification-row">
+                            <label>
+                                <input type="checkbox" id="agendaNotification" checked>
+                                Receber notificação
+                            </label>
+                            <select id="agendaNotificationTime" class="notification-time">
+                                <option value="5">5 minutos antes</option>
+                                <option value="15" selected>15 minutos antes</option>
+                                <option value="30">30 minutos antes</option>
+                                <option value="60">1 hora antes</option>
+                                <option value="1440">1 dia antes</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="addAgendaBtn">Adicionar à Agenda</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtros da agenda -->
+            <div class="agenda-filters">
+                <select id="agendaFilter" class="filter-select">
+                    <option value="todos">Todos os compromissos</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Esta semana</option>
+                    <option value="mes">Este mês</option>
+                    <option value="compromisso">Compromissos</option>
+                    <option value="reuniao">Reuniões</option>
+                    <option value="projeto">Projetos</option>
+                    <option value="pessoal">Pessoal</option>
+                </select>
+            </div>
+            
+            <div class="agenda-container" id="agendaContainer">
+                <!-- Cards de agenda serão inseridos aqui -->
+            </div>
+        </section>
+
         <!-- Calendário -->
         <section id="calendario" class="section">
             <h1>Calendário</h1>
@@ -340,6 +562,23 @@
         </section>
     </main>
 
+    <!-- Card de Notificação -->
+    <div id="notificationCard" class="notification-card hidden">
+        <div class="notification-content">
+            <div class="notification-header">
+                <h4 id="notificationTitle">Compromisso Próximo</h4>
+                <button class="notification-close" id="closeNotification">×</button>
+            </div>
+            <div class="notification-body">
+                <p id="notificationMessage"></p>
+                <div class="notification-actions">
+                    <button class="btn btn-sm btn-primary" id="markAsViewed">Marcar como Visto</button>
+                    <button class="btn btn-sm btn-secondary" id="snoozeNotification">Lembrar em 5 min</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Gerar PDF -->
     <div class="modal" id="pdfModal">
         <div class="modal-content">
@@ -367,6 +606,37 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarPdf">Cancelar</button>
                 <button class="btn btn-primary" id="confirmarPdf">Gerar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerar Excel -->
+    <div class="modal" id="excelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gerar Excel</h3>
+                <span class="close" id="closeExcelModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="excelOption" value="todos" checked>
+                        Todos os projetos
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="excelOption" value="especifico">
+                        Projeto específico
+                    </label>
+                    <select id="projetoEspecificoExcel" disabled>
+                        <option value="">Selecione um projeto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarExcel">Cancelar</button>
+                <button class="btn btn-success" id="confirmarExcel">Gerar Excel</button>
             </div>
         </div>
     </div>
