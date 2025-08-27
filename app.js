@@ -9,6 +9,10 @@ class ProjectManager {
         this.calendarFilter = 'etapas'; // Filtro padrão do calendário
         this.currentStepTasks = []; // Tarefas temporárias do modal de etapa
         this.ideas = this.loadIdeas(); // Nova propriedade para ideias
+        this.meetings = this.loadMeetings(); // Nova propriedade para reuniões
+        this.agenda = this.loadAgenda(); // Nova propriedade para agenda
+        this.notificationInterval = null; // Intervalo para verificar notificações
+        this.snoozedNotifications = new Set(); // Notificações adiadas
         
         // Novas propriedades para filtros e paginação
         this.filters = {
@@ -40,6 +44,7 @@ class ProjectManager {
         this.renderProjects();
         this.renderCalendar();
         this.showSection('dashboard');
+        this.startNotificationSystem(); // Iniciar sistema de notificações
     }
 
     // Event Listeners
@@ -86,6 +91,31 @@ class ProjectManager {
         document.querySelectorAll('input[name="pdfOption"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
                 const select = document.getElementById('projetoEspecifico');
+                select.disabled = e.target.value === 'todos';
+            });
+        });
+
+        // Modal Excel
+        document.getElementById('gerarExcelBtn').addEventListener('click', () => {
+            this.showExcelModal();
+        });
+
+        document.getElementById('closeExcelModal').addEventListener('click', () => {
+            this.hideExcelModal();
+        });
+
+        document.getElementById('cancelarExcel').addEventListener('click', () => {
+            this.hideExcelModal();
+        });
+
+        document.getElementById('confirmarExcel').addEventListener('click', () => {
+            this.generateExcel();
+        });
+
+        // Radio buttons do Excel
+        document.querySelectorAll('input[name="excelOption"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const select = document.getElementById('projetoEspecificoExcel');
                 select.disabled = e.target.value === 'todos';
             });
         });
@@ -279,6 +309,45 @@ class ProjectManager {
             }
         });
 
+        // Reuniões
+        document.getElementById('addMeetingBtn').addEventListener('click', () => {
+            this.addMeeting();
+        });
+
+        document.getElementById('newMeetingTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addMeeting();
+            }
+        });
+
+        // Agenda
+        document.getElementById('addAgendaBtn').addEventListener('click', () => {
+            this.addAgendaItem();
+        });
+
+        document.getElementById('newAgendaTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addAgendaItem();
+            }
+        });
+
+        document.getElementById('agendaFilter').addEventListener('change', () => {
+            this.renderAgenda();
+        });
+
+        // Notificações
+        document.getElementById('closeNotification').addEventListener('click', () => {
+            this.hideNotification();
+        });
+
+        document.getElementById('markAsViewed').addEventListener('click', () => {
+            this.markNotificationAsViewed();
+        });
+
+        document.getElementById('snoozeNotification').addEventListener('click', () => {
+            this.snoozeNotification();
+        });
+
         // Fechar modais clicando fora
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
@@ -330,6 +399,10 @@ class ProjectManager {
             this.renderCalendar();
         } else if (sectionName === 'ideias') {
             this.renderIdeas();
+        } else if (sectionName === 'reunioes') {
+            this.renderMeetings();
+        } else if (sectionName === 'agenda') {
+            this.renderAgenda();
         }
     }
 
@@ -979,6 +1052,475 @@ class ProjectManager {
         }
     }
 
+    // Gerenciamento de Reuniões
+    loadMeetings() {
+        const saved = localStorage.getItem('project-meetings');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveMeetings() {
+        localStorage.setItem('project-meetings', JSON.stringify(this.meetings));
+    }
+
+    addMeeting() {
+        const titleInput = document.getElementById('newMeetingTitle');
+        const descriptionInput = document.getElementById('newMeetingDescription');
+        const dateInput = document.getElementById('newMeetingDate');
+        const projectSelect = document.getElementById('newMeetingProject');
+        const locationInput = document.getElementById('newMeetingLocation');
+        
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const date = dateInput.value;
+        const projectId = projectSelect.value;
+        const location = locationInput.value.trim();
+
+        if (!title) {
+            this.showToast('Título da reunião é obrigatório!', 'warning');
+            return;
+        }
+
+        if (!date) {
+            this.showToast('Data e hora da reunião são obrigatórias!', 'warning');
+            return;
+        }
+
+        const newMeeting = {
+            id: this.generateId(),
+            titulo: title,
+            descricao: description,
+            dataHora: date,
+            projectId: projectId || null,
+            local: location,
+            dataCriacao: new Date().toISOString(),
+            concluida: false
+        };
+
+        this.meetings.push(newMeeting);
+        this.saveMeetings();
+        this.renderMeetings();
+        
+        // Limpar campos
+        titleInput.value = '';
+        descriptionInput.value = '';
+        dateInput.value = '';
+        projectSelect.value = '';
+        locationInput.value = '';
+        
+        this.showToast('Reunião agendada com sucesso!');
+    }
+
+    renderMeetings() {
+        const container = document.getElementById('meetingsContainer');
+        
+        // Atualizar select de projetos
+        this.updateMeetingProjectSelect();
+        
+        if (this.meetings.length === 0) {
+            container.innerHTML = '<p class="no-meetings">Nenhuma reunião agendada ainda. Que tal agendar uma nova reunião?</p>';
+            return;
+        }
+
+        // Ordenar reuniões por data
+        const sortedMeetings = [...this.meetings].sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
+
+        container.innerHTML = sortedMeetings.map(meeting => {
+            const meetingDate = new Date(meeting.dataHora);
+            const formattedDate = meetingDate.toLocaleDateString('pt-BR');
+            const formattedTime = meetingDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const project = meeting.projectId ? this.projects.find(p => p.id === meeting.projectId) : null;
+            const isUpcoming = meetingDate > new Date();
+            const isPast = meetingDate < new Date();
+            
+            return `
+                <div class="meeting-card ${meeting.concluida ? 'completed' : ''} ${isPast && !meeting.concluida ? 'overdue' : ''}">
+                    <div class="meeting-header">
+                        <h3 class="meeting-title">${meeting.titulo}</h3>
+                        <div class="meeting-actions">
+                            <button class="btn btn-sm ${meeting.concluida ? 'btn-secondary' : 'btn-success'}" 
+                                    onclick="projectManager.toggleMeetingCompletion('${meeting.id}')">
+                                ${meeting.concluida ? 'Realizada' : 'Marcar como Realizada'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="projectManager.removeMeeting('${meeting.id}')">×</button>
+                        </div>
+                    </div>
+                    <div class="meeting-content">
+                        <div class="meeting-datetime">
+                            <strong>📅 ${formattedDate} às ${formattedTime}</strong>
+                            ${isUpcoming ? '<span class="meeting-status upcoming">Próxima</span>' : ''}
+                            ${isPast && !meeting.concluida ? '<span class="meeting-status overdue">Atrasada</span>' : ''}
+                        </div>
+                        ${meeting.descricao ? `<p class="meeting-description">${meeting.descricao}</p>` : ''}
+                        ${meeting.local ? `<p class="meeting-location">📍 ${meeting.local}</p>` : ''}
+                        ${project ? `<p class="meeting-project">🔗 Projeto: ${project.titulo}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    updateMeetingProjectSelect() {
+        const select = document.getElementById('newMeetingProject');
+        select.innerHTML = '<option value="">Projeto relacionado (opcional)</option>' +
+            this.projects.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
+    }
+
+    toggleMeetingCompletion(meetingId) {
+        const meeting = this.meetings.find(m => m.id === meetingId);
+        meeting.concluida = !meeting.concluida;
+        this.saveMeetings();
+        this.renderMeetings();
+        this.showToast(meeting.concluida ? 'Reunião marcada como realizada!' : 'Reunião desmarcada como realizada!');
+    }
+
+    removeMeeting(meetingId) {
+        if (confirm('Tem certeza que deseja remover esta reunião?')) {
+            this.meetings = this.meetings.filter(m => m.id !== meetingId);
+            this.saveMeetings();
+            this.renderMeetings();
+            this.showToast('Reunião removida com sucesso!');
+        }
+    }
+
+    // Gerenciamento de Agenda
+    loadAgenda() {
+        const saved = localStorage.getItem('project-agenda');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveAgenda() {
+        localStorage.setItem('project-agenda', JSON.stringify(this.agenda));
+    }
+
+    addAgendaItem() {
+        const titleInput = document.getElementById('newAgendaTitle');
+        const descriptionInput = document.getElementById('newAgendaDescription');
+        const dateInput = document.getElementById('newAgendaDate');
+        const typeSelect = document.getElementById('newAgendaType');
+        const projectSelect = document.getElementById('newAgendaProject');
+        const notificationCheckbox = document.getElementById('agendaNotification');
+        const notificationTimeSelect = document.getElementById('agendaNotificationTime');
+        
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const date = dateInput.value;
+        const type = typeSelect.value;
+        const projectId = projectSelect.value;
+        const hasNotification = notificationCheckbox.checked;
+        const notificationMinutes = parseInt(notificationTimeSelect.value);
+
+        if (!title) {
+            this.showToast('Título do compromisso é obrigatório!', 'warning');
+            return;
+        }
+
+        if (!date) {
+            this.showToast('Data e hora do compromisso são obrigatórias!', 'warning');
+            return;
+        }
+
+        const newAgendaItem = {
+            id: this.generateId(),
+            titulo: title,
+            descricao: description,
+            dataHora: date,
+            tipo: type,
+            projectId: projectId || null,
+            hasNotification: hasNotification,
+            notificationMinutes: notificationMinutes,
+            dataCriacao: new Date().toISOString(),
+            concluida: false,
+            notificationShown: false
+        };
+
+        this.agenda.push(newAgendaItem);
+        this.saveAgenda();
+        this.renderAgenda();
+        
+        // Limpar campos
+        titleInput.value = '';
+        descriptionInput.value = '';
+        dateInput.value = '';
+        typeSelect.value = 'compromisso';
+        projectSelect.value = '';
+        notificationCheckbox.checked = true;
+        notificationTimeSelect.value = '15';
+        
+        this.showToast('Compromisso adicionado à agenda com sucesso!');
+    }
+
+    renderAgenda() {
+        const container = document.getElementById('agendaContainer');
+        const filter = document.getElementById('agendaFilter').value;
+        
+        // Atualizar select de projetos
+        this.updateAgendaProjectSelect();
+        
+        // Filtrar itens da agenda
+        let filteredAgenda = this.filterAgendaItems(filter);
+        
+        if (filteredAgenda.length === 0) {
+            container.innerHTML = '<p class="no-agenda">Nenhum compromisso encontrado para o filtro selecionado.</p>';
+            return;
+        }
+
+        // Ordenar por data
+        filteredAgenda.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
+
+        container.innerHTML = filteredAgenda.map(item => {
+            const itemDate = new Date(item.dataHora);
+            const formattedDate = itemDate.toLocaleDateString('pt-BR');
+            const formattedTime = itemDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const project = item.projectId ? this.projects.find(p => p.id === item.projectId) : null;
+            const isUpcoming = itemDate > new Date();
+            const isPast = itemDate < new Date();
+            const isToday = this.isToday(itemDate);
+            
+            return `
+                <div class="agenda-card ${item.concluida ? 'completed' : ''} ${isPast && !item.concluida ? 'overdue' : ''} ${isToday ? 'today' : ''}">
+                    <div class="agenda-header">
+                        <div class="agenda-title-section">
+                            <h3 class="agenda-title">${item.titulo}</h3>
+                            <span class="agenda-type ${item.tipo}">${this.getTypeLabel(item.tipo)}</span>
+                        </div>
+                        <div class="agenda-actions">
+                            <button class="btn btn-sm ${item.concluida ? 'btn-secondary' : 'btn-success'}" 
+                                    onclick="projectManager.toggleAgendaCompletion('${item.id}')">
+                                ${item.concluida ? 'Concluído' : 'Marcar como Concluído'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="projectManager.removeAgendaItem('${item.id}')">×</button>
+                        </div>
+                    </div>
+                    <div class="agenda-content">
+                        <div class="agenda-datetime">
+                            <strong>📅 ${formattedDate} às ${formattedTime}</strong>
+                            ${isToday ? '<span class="agenda-status today">Hoje</span>' : ''}
+                            ${isUpcoming && !isToday ? '<span class="agenda-status upcoming">Próximo</span>' : ''}
+                            ${isPast && !item.concluida ? '<span class="agenda-status overdue">Atrasado</span>' : ''}
+                        </div>
+                        ${item.descricao ? `<p class="agenda-description">${item.descricao}</p>` : ''}
+                        ${project ? `<p class="agenda-project">🔗 Projeto: ${project.titulo}</p>` : ''}
+                        ${item.hasNotification ? `<p class="agenda-notification">🔔 Notificação: ${item.notificationMinutes} min antes</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    filterAgendaItems(filter) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+        
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        return this.agenda.filter(item => {
+            const itemDate = new Date(item.dataHora);
+            
+            switch (filter) {
+                case 'hoje':
+                    return itemDate >= today && itemDate < tomorrow;
+                case 'semana':
+                    return itemDate >= weekStart && itemDate < weekEnd;
+                case 'mes':
+                    return itemDate >= monthStart && itemDate <= monthEnd;
+                case 'compromisso':
+                case 'reuniao':
+                case 'projeto':
+                case 'pessoal':
+                case 'outro':
+                    return item.tipo === filter;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    getTypeLabel(type) {
+        const labels = {
+            'compromisso': 'Compromisso',
+            'reuniao': 'Reunião',
+            'projeto': 'Projeto',
+            'pessoal': 'Pessoal',
+            'outro': 'Outro'
+        };
+        return labels[type] || type;
+    }
+
+    updateAgendaProjectSelect() {
+        const select = document.getElementById('newAgendaProject');
+        select.innerHTML = '<option value="">Projeto relacionado (opcional)</option>' +
+            this.projects.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
+    }
+
+    toggleAgendaCompletion(agendaId) {
+        const item = this.agenda.find(a => a.id === agendaId);
+        item.concluida = !item.concluida;
+        this.saveAgenda();
+        this.renderAgenda();
+        this.showToast(item.concluida ? 'Compromisso marcado como concluído!' : 'Compromisso desmarcado como concluído!');
+    }
+
+    removeAgendaItem(agendaId) {
+        if (confirm('Tem certeza que deseja remover este compromisso?')) {
+            this.agenda = this.agenda.filter(a => a.id !== agendaId);
+            this.saveAgenda();
+            this.renderAgenda();
+            this.showToast('Compromisso removido com sucesso!');
+        }
+    }
+
+    // Sistema de Notificações
+    startNotificationSystem() {
+        // Verificar notificações a cada minuto
+        this.notificationInterval = setInterval(() => {
+            this.checkNotifications();
+        }, 60000); // 60 segundos
+
+        // Verificar imediatamente ao iniciar
+        this.checkNotifications();
+    }
+
+    checkNotifications() {
+        const now = new Date();
+        
+        // Verificar agenda
+        this.agenda.forEach(item => {
+            if (item.hasNotification && !item.concluida && !item.notificationShown) {
+                const itemDate = new Date(item.dataHora);
+                const timeDiff = itemDate.getTime() - now.getTime();
+                const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+                
+                // Se está dentro do tempo de notificação e não foi adiada
+                if (minutesDiff <= item.notificationMinutes && minutesDiff >= 0 && !this.snoozedNotifications.has(item.id)) {
+                    this.showNotification(item);
+                    item.notificationShown = true;
+                    this.saveAgenda();
+                }
+            }
+        });
+
+        // Verificar reuniões
+        this.meetings.forEach(meeting => {
+            if (!meeting.concluida && !meeting.notificationShown) {
+                const meetingDate = new Date(meeting.dataHora);
+                const timeDiff = meetingDate.getTime() - now.getTime();
+                const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+                
+                // Notificar 15 minutos antes por padrão
+                if (minutesDiff <= 15 && minutesDiff >= 0 && !this.snoozedNotifications.has(meeting.id)) {
+                    this.showNotification(meeting, 'reuniao');
+                    meeting.notificationShown = true;
+                    this.saveMeetings();
+                }
+            }
+        });
+    }
+
+    showNotification(item, type = 'agenda') {
+        const card = document.getElementById('notificationCard');
+        const title = document.getElementById('notificationTitle');
+        const message = document.getElementById('notificationMessage');
+        
+        const itemDate = new Date(item.dataHora);
+        const formattedDate = itemDate.toLocaleDateString('pt-BR');
+        const formattedTime = itemDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        if (type === 'reuniao') {
+            title.textContent = 'Reunião Próxima';
+            message.innerHTML = `
+                <strong>${item.titulo}</strong><br>
+                📅 ${formattedDate} às ${formattedTime}<br>
+                ${item.local ? `📍 ${item.local}` : ''}
+            `;
+        } else {
+            title.textContent = 'Compromisso Próximo';
+            message.innerHTML = `
+                <strong>${item.titulo}</strong><br>
+                📅 ${formattedDate} às ${formattedTime}<br>
+                🏷️ ${this.getTypeLabel(item.tipo)}
+            `;
+        }
+        
+        // Armazenar ID do item atual para ações
+        card.dataset.itemId = item.id;
+        card.dataset.itemType = type;
+        
+        card.classList.remove('hidden');
+        
+        // Auto-hide após 10 segundos se não interagir
+        setTimeout(() => {
+            if (!card.classList.contains('hidden')) {
+                this.hideNotification();
+            }
+        }, 10000);
+    }
+
+    hideNotification() {
+        const card = document.getElementById('notificationCard');
+        card.classList.add('hidden');
+    }
+
+    markNotificationAsViewed() {
+        const card = document.getElementById('notificationCard');
+        const itemId = card.dataset.itemId;
+        const itemType = card.dataset.itemType;
+        
+        if (itemType === 'reuniao') {
+            const meeting = this.meetings.find(m => m.id === itemId);
+            if (meeting) {
+                meeting.notificationViewed = true;
+                this.saveMeetings();
+            }
+        } else {
+            const item = this.agenda.find(a => a.id === itemId);
+            if (item) {
+                item.notificationViewed = true;
+                this.saveAgenda();
+            }
+        }
+        
+        this.hideNotification();
+        this.showToast('Notificação marcada como vista!');
+    }
+
+    snoozeNotification() {
+        const card = document.getElementById('notificationCard');
+        const itemId = card.dataset.itemId;
+        
+        // Adicionar à lista de adiadas por 5 minutos
+        this.snoozedNotifications.add(itemId);
+        
+        setTimeout(() => {
+            this.snoozedNotifications.delete(itemId);
+            // Reativar notificação
+            const itemType = card.dataset.itemType;
+            if (itemType === 'reuniao') {
+                const meeting = this.meetings.find(m => m.id === itemId);
+                if (meeting) {
+                    meeting.notificationShown = false;
+                    this.saveMeetings();
+                }
+            } else {
+                const item = this.agenda.find(a => a.id === itemId);
+                if (item) {
+                    item.notificationShown = false;
+                    this.saveAgenda();
+                }
+            }
+        }, 5 * 60 * 1000); // 5 minutos
+        
+        this.hideNotification();
+        this.showToast('Notificação adiada por 5 minutos!');
+    }
+
     // Dashboard
     updateDashboard() {
         const total = this.projects.length;
@@ -1615,6 +2157,178 @@ class ProjectManager {
         document.getElementById('pdfModal').classList.remove('show');
     }
 
+    // Geração de Excel
+    showExcelModal() {
+        const select = document.getElementById('projetoEspecificoExcel');
+        select.innerHTML = '<option value="">' + 'Selecione um projeto' + '</option>' +
+            this.projects.map(p => `<option value="${p.id}">${p.titulo}</option>`).join('');
+        
+        document.getElementById('excelModal').classList.add('show');
+    }
+
+    hideExcelModal() {
+        document.getElementById('excelModal').classList.remove('show');
+    }
+
+    generateExcel() {
+        const option = document.querySelector('input[name="excelOption"]:checked').value;
+        let projectsToInclude = [];
+
+        if (option === 'todos') {
+            projectsToInclude = this.projects;
+        } else {
+            const projectId = document.getElementById('projetoEspecificoExcel').value;
+            if (!projectId) {
+                this.showToast('Selecione um projeto específico!', 'warning');
+                return;
+            }
+            projectsToInclude = this.projects.filter(p => p.id === projectId);
+        }
+
+        this.createExcel(projectsToInclude);
+        this.hideExcelModal();
+    }
+
+    createExcel(projects) {
+        // Criar workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Planilha 1: Resumo dos Projetos
+        const resumoData = [
+            ['Relatório de Gestão de Projetos'],
+            ['Gerado em:', new Date().toLocaleDateString('pt-BR')],
+            [''],
+            ['Título', 'Responsável', 'Prioridade', 'Progresso (%)', 'Data Criação', 'Data Entrega', 'Status']
+        ];
+
+        projects.forEach(project => {
+            const progress = this.calculateProgress(project);
+            const status = progress === 100 ? 'Concluído' : 'Em Andamento';
+            const creationDate = new Date(project.dataCriacao).toLocaleDateString('pt-BR');
+            const deliveryDate = project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida';
+
+            resumoData.push([
+                project.titulo,
+                project.responsavel || 'Não informado',
+                project.prioridade.toUpperCase(),
+                progress,
+                creationDate,
+                deliveryDate,
+                status
+            ]);
+        });
+
+        const wsResumo = XLSX.utils.aoa_to_sheet(resumoData);
+        
+        // Estilizar cabeçalho
+        wsResumo['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+        
+        // Definir larguras das colunas
+        wsResumo['!cols'] = [
+            { wch: 25 }, // Título
+            { wch: 20 }, // Responsável
+            { wch: 12 }, // Prioridade
+            { wch: 12 }, // Progresso
+            { wch: 15 }, // Data Criação
+            { wch: 15 }, // Data Entrega
+            { wch: 15 }  // Status
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo dos Projetos');
+
+        // Planilha 2: Detalhes das Etapas
+        const etapasData = [
+            ['Detalhes das Etapas'],
+            [''],
+            ['Projeto', 'Etapa', 'Responsável', 'Prazo', 'Status', 'Link', 'Observação', 'Tarefas Concluídas', 'Total Tarefas']
+        ];
+
+        projects.forEach(project => {
+            if (project.etapas && project.etapas.length > 0) {
+                project.etapas.forEach(etapa => {
+                    const prazoFormatado = etapa.prazo ? new Date(etapa.prazo).toLocaleDateString('pt-BR') : 'Não definido';
+                    const status = etapa.concluida ? 'Concluída' : 'Pendente';
+                    const totalTarefas = etapa.tarefas ? etapa.tarefas.length : 0;
+                    const tarefasConcluidas = etapa.tarefas ? etapa.tarefas.filter(t => t.concluida).length : 0;
+
+                    etapasData.push([
+                        project.titulo,
+                        etapa.titulo,
+                        etapa.responsavel || 'Não informado',
+                        prazoFormatado,
+                        status,
+                        etapa.link || 'N/A',
+                        etapa.observacao || 'N/A',
+                        tarefasConcluidas,
+                        totalTarefas
+                    ]);
+                });
+            } else {
+                etapasData.push([
+                    project.titulo,
+                    'Nenhuma etapa cadastrada',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    0,
+                    0
+                ]);
+            }
+        });
+
+        const wsEtapas = XLSX.utils.aoa_to_sheet(etapasData);
+        
+        // Definir larguras das colunas
+        wsEtapas['!cols'] = [
+            { wch: 25 }, // Projeto
+            { wch: 25 }, // Etapa
+            { wch: 20 }, // Responsável
+            { wch: 15 }, // Prazo
+            { wch: 12 }, // Status
+            { wch: 30 }, // Link
+            { wch: 30 }, // Observação
+            { wch: 15 }, // Tarefas Concluídas
+            { wch: 12 }  // Total Tarefas
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsEtapas, 'Detalhes das Etapas');
+
+        // Planilha 3: Estatísticas
+        const estatisticasData = [
+            ['Estatísticas do Projeto'],
+            [''],
+            ['Métrica', 'Valor'],
+            ['Total de Projetos', projects.length],
+            ['Projetos Concluídos', projects.filter(p => this.calculateProgress(p) === 100).length],
+            ['Projetos em Andamento', projects.filter(p => this.calculateProgress(p) < 100).length],
+            ['Projetos Prioridade Alta', projects.filter(p => p.prioridade === 'alta').length],
+            ['Projetos Prioridade Média', projects.filter(p => p.prioridade === 'media').length],
+            ['Projetos Prioridade Leve', projects.filter(p => p.prioridade === 'leve').length],
+            [''],
+            ['Progresso Médio (%)', Math.round(projects.reduce((acc, p) => acc + this.calculateProgress(p), 0) / projects.length) || 0],
+            ['Total de Etapas', projects.reduce((acc, p) => acc + (p.etapas ? p.etapas.length : 0), 0)],
+            ['Etapas Concluídas', projects.reduce((acc, p) => acc + (p.etapas ? p.etapas.filter(e => e.concluida).length : 0), 0)]
+        ];
+
+        const wsEstatisticas = XLSX.utils.aoa_to_sheet(estatisticasData);
+        
+        // Definir larguras das colunas
+        wsEstatisticas['!cols'] = [
+            { wch: 25 }, // Métrica
+            { wch: 15 }  // Valor
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsEstatisticas, 'Estatísticas');
+
+        // Salvar arquivo
+        const fileName = `gestao_projetos_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        this.showToast('Excel gerado com sucesso!', 'success');
+    }
+
     generatePDF() {
         const option = document.querySelector('input[name="pdfOption"]:checked').value;
         let projectsToInclude = [];
@@ -1638,101 +2352,216 @@ class ProjectManager {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // Configurações
+        // Configurações e cores
         const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
         const margin = 20;
         let yPosition = margin;
+        
+        // Cores
+        const primaryColor = [52, 152, 219]; // Azul
+        const secondaryColor = [236, 240, 241]; // Cinza claro
+        const successColor = [46, 204, 113]; // Verde
+        const warningColor = [241, 196, 15]; // Amarelo
+        const dangerColor = [231, 76, 60]; // Vermelho
 
-        // Título principal
-        doc.setFontSize(20);
+        // Função para adicionar cabeçalho
+        const addHeader = () => {
+            // Fundo do cabeçalho
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            
+            // Título principal
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont(undefined, 'bold');
+            doc.text('Relatório de Gestão de Projetos', margin, 25);
+            
+            // Data de geração
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - margin - 60, 25);
+            
+            // Linha decorativa
+            doc.setDrawColor(...primaryColor);
+            doc.setLineWidth(2);
+            doc.line(margin, 45, pageWidth - margin, 45);
+            
+            return 55; // Nova posição Y
+        };
+
+        // Função para adicionar rodapé
+        const addFooter = (pageNum) => {
+            doc.setTextColor(128, 128, 128);
+            doc.setFontSize(10);
+            doc.text(`Página ${pageNum}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        };
+
+        // Função para verificar espaço e adicionar nova página se necessário
+        const checkPageSpace = (requiredSpace) => {
+            if (yPosition + requiredSpace > pageHeight - 30) {
+                addFooter(doc.internal.getNumberOfPages());
+                doc.addPage();
+                yPosition = addHeader();
+            }
+        };
+
+        // Adicionar cabeçalho da primeira página
+        yPosition = addHeader();
+
+        // Resumo executivo
+        checkPageSpace(60);
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
-        doc.text('Relatório de Gestão de Projetos', margin, yPosition);
+        doc.text('Resumo Executivo', margin, yPosition);
         yPosition += 15;
 
-        // Data de geração
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPosition);
-        yPosition += 20;
+        // Estatísticas em caixas coloridas
+        const totalProjects = projects.length;
+        const completedProjects = projects.filter(p => this.calculateProgress(p) === 100).length;
+        const inProgressProjects = totalProjects - completedProjects;
+        const avgProgress = Math.round(projects.reduce((acc, p) => acc + this.calculateProgress(p), 0) / totalProjects) || 0;
 
+        // Caixa de estatísticas
+        doc.setFillColor(...secondaryColor);
+        doc.rect(margin, yPosition, pageWidth - 2 * margin, 35, 'F');
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        
+        const statsY = yPosition + 10;
+        doc.text(`Total de Projetos: ${totalProjects}`, margin + 10, statsY);
+        doc.text(`Concluídos: ${completedProjects}`, margin + 10, statsY + 8);
+        doc.text(`Em Andamento: ${inProgressProjects}`, margin + 10, statsY + 16);
+        doc.text(`Progresso Médio: ${avgProgress}%`, margin + 100, statsY + 8);
+
+        yPosition += 50;
+
+        // Lista de projetos
         projects.forEach((project, index) => {
-            // Verificar se precisa de nova página
-            if (yPosition > 250) {
-                doc.addPage();
-                yPosition = margin;
+            checkPageSpace(80);
+
+            // Caixa do projeto
+            const projectBoxHeight = 25;
+            
+            // Cor da prioridade
+            let priorityColor;
+            switch (project.prioridade) {
+                case 'alta': priorityColor = dangerColor; break;
+                case 'media': priorityColor = warningColor; break;
+                case 'leve': priorityColor = successColor; break;
+                default: priorityColor = [128, 128, 128];
             }
 
-            // Título do projeto
-            doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
-            doc.text(`${index + 1}. ${project.titulo}`, margin, yPosition);
-            yPosition += 10;
+            // Fundo do projeto
+            doc.setFillColor(...priorityColor);
+            doc.rect(margin, yPosition, 5, projectBoxHeight, 'F');
+            
+            doc.setFillColor(248, 249, 250);
+            doc.rect(margin + 5, yPosition, pageWidth - 2 * margin - 5, projectBoxHeight, 'F');
 
-            // Informações do projeto
+            // Título do projeto
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${index + 1}. ${project.titulo}`, margin + 10, yPosition + 8);
+
+            // Progresso
+            const progress = this.calculateProgress(project);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`${progress}% concluído`, pageWidth - margin - 40, yPosition + 8);
+
+            // Prioridade
+            doc.setTextColor(...priorityColor);
+            doc.setFont(undefined, 'bold');
+            doc.text(project.prioridade.toUpperCase(), margin + 10, yPosition + 18);
+
+            yPosition += projectBoxHeight + 5;
+
+            // Informações detalhadas
+            doc.setTextColor(0, 0, 0);
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
             
             const projectInfo = [
                 `Descrição: ${project.descricao || 'Não informada'}`,
                 `Responsável: ${project.responsavel || 'Não informado'}`,
-                `Prioridade: ${project.prioridade.toUpperCase()}`,
                 `Data de Criação: ${new Date(project.dataCriacao).toLocaleDateString('pt-BR')}`,
-                `Data de Entrega: ${project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida'}`,
-                `Progresso: ${this.calculateProgress(project)}%`
+                `Data de Entrega: ${project.dataEntrega ? new Date(project.dataEntrega).toLocaleDateString('pt-BR') : 'Não definida'}`
             ];
 
             projectInfo.forEach(info => {
-                doc.text(info, margin, yPosition);
+                checkPageSpace(8);
+                doc.text(info, margin + 10, yPosition);
                 yPosition += 6;
             });
 
             // Etapas
             if (project.etapas.length > 0) {
+                checkPageSpace(40);
                 yPosition += 5;
                 doc.setFont(undefined, 'bold');
-                doc.text('Etapas:', margin, yPosition);
+                doc.text('Etapas:', margin + 10, yPosition);
                 yPosition += 8;
 
                 const tableData = project.etapas.map(step => [
                     step.titulo,
                     step.responsavel || 'N/A',
                     step.prazo ? new Date(step.prazo).toLocaleDateString('pt-BR') : 'N/A',
-                    step.link || 'N/A', // Novo campo
+                    step.link || 'N/A',
                     step.concluida ? 'Sim' : 'Não',
                     step.observacao || 'N/A'
                 ]);
 
                 doc.autoTable({
-                    head: [['Título', 'Responsável', 'Prazo', 'Link', 'Concluída', 'Observação']], // Cabeçalho atualizado
+                    head: [['Título', 'Responsável', 'Prazo', 'Link', 'Concluída', 'Observação']],
                     body: tableData,
                     startY: yPosition,
-                    margin: { left: margin, right: margin },
+                    margin: { left: margin + 10, right: margin },
                     styles: {
                         fontSize: 8,
-                        cellPadding: 3
+                        cellPadding: 3,
+                        textColor: [0, 0, 0]
                     },
                     headStyles: {
-                        fillColor: [51, 51, 51],
-                        textColor: [255, 255, 255]
+                        fillColor: primaryColor,
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold'
                     },
                     alternateRowStyles: {
                         fillColor: [248, 249, 250]
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 35 }, // Título
+                        1: { cellWidth: 25 }, // Responsável
+                        2: { cellWidth: 20 }, // Prazo
+                        3: { cellWidth: 30 }, // Link
+                        4: { cellWidth: 15 }, // Concluída
+                        5: { cellWidth: 35 }  // Observação
                     }
                 });
 
-                yPosition = doc.lastAutoTable.finalY + 15;
+                yPosition = doc.lastAutoTable.finalY + 10;
             } else {
                 doc.setFont(undefined, 'italic');
-                doc.text('Nenhuma etapa cadastrada.', margin, yPosition);
-                yPosition += 15;
+                doc.setTextColor(128, 128, 128);
+                doc.text('Nenhuma etapa cadastrada.', margin + 10, yPosition);
+                yPosition += 10;
             }
 
-            yPosition += 10;
+            yPosition += 15; // Espaço entre projetos
         });
 
+        // Adicionar rodapé na última página
+        addFooter(doc.internal.getNumberOfPages());
+
         // Salvar PDF
-        doc.save('gestao_projetos.pdf');
-        this.showToast('PDF gerado com sucesso!');
+        const fileName = `gestao_projetos_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        this.showToast('PDF gerado com sucesso!', 'success');
     }
 
     // Utilitários
@@ -1805,13 +2634,128 @@ class ProjectManager {
 
     // Persistência
     loadProjects() {
-        const stored = localStorage.getItem('gestao_projetos');
-        return stored ? JSON.parse(stored) : [];
+        try {
+            // Primeiro tenta carregar do Firebase
+            if (window.firebaseService) {
+                return window.firebaseService.loadProjects() || [];
+            }
+            // Fallback para localStorage
+            const stored = localStorage.getItem('gestao_projetos');
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Erro ao carregar projetos:', error);
+            return [];
+        }
     }
 
     saveProjects() {
-        localStorage.setItem('gestao_projetos', JSON.stringify(this.projects));
-        this.updateDashboard();
+        try {
+            // Salva no Firebase se disponível
+            if (window.firebaseService) {
+                window.firebaseService.saveProjects(this.projects);
+            }
+            // Também salva no localStorage como backup
+            localStorage.setItem('gestao_projetos', JSON.stringify(this.projects));
+            this.updateDashboard();
+        } catch (error) {
+            console.error('Erro ao salvar projetos:', error);
+        }
+    }
+
+    loadDailyTasks() {
+        try {
+            if (window.firebaseService) {
+                return window.firebaseService.loadDailyTasks() || {};
+            }
+            const tasks = localStorage.getItem('dailyTasks');
+            return tasks ? JSON.parse(tasks) : {};
+        } catch (error) {
+            console.error('Erro ao carregar tarefas diárias:', error);
+            return {};
+        }
+    }
+
+    saveDailyTasks() {
+        try {
+            if (window.firebaseService) {
+                window.firebaseService.saveDailyTasks(this.dailyTasks);
+            }
+            localStorage.setItem('dailyTasks', JSON.stringify(this.dailyTasks));
+        } catch (error) {
+            console.error('Erro ao salvar tarefas diárias:', error);
+        }
+    }
+
+    loadIdeas() {
+        try {
+            if (window.firebaseService) {
+                return window.firebaseService.loadIdeas() || [];
+            }
+            const ideas = localStorage.getItem('ideas');
+            return ideas ? JSON.parse(ideas) : [];
+        } catch (error) {
+            console.error('Erro ao carregar ideias:', error);
+            return [];
+        }
+    }
+
+    saveIdeas() {
+        try {
+            if (window.firebaseService) {
+                window.firebaseService.saveIdeas(this.ideas);
+            }
+            localStorage.setItem('ideas', JSON.stringify(this.ideas));
+        } catch (error) {
+            console.error('Erro ao salvar ideias:', error);
+        }
+    }
+
+    loadMeetings() {
+        try {
+            if (window.firebaseService) {
+                return window.firebaseService.loadMeetings() || [];
+            }
+            const meetings = localStorage.getItem('meetings');
+            return meetings ? JSON.parse(meetings) : [];
+        } catch (error) {
+            console.error('Erro ao carregar reuniões:', error);
+            return [];
+        }
+    }
+
+    saveMeetings() {
+        try {
+            if (window.firebaseService) {
+                window.firebaseService.saveMeetings(this.meetings);
+            }
+            localStorage.setItem('meetings', JSON.stringify(this.meetings));
+        } catch (error) {
+            console.error('Erro ao salvar reuniões:', error);
+        }
+    }
+
+    loadAgenda() {
+        try {
+            if (window.firebaseService) {
+                return window.firebaseService.loadAgenda() || [];
+            }
+            const agenda = localStorage.getItem('agenda');
+            return agenda ? JSON.parse(agenda) : [];
+        } catch (error) {
+            console.error('Erro ao carregar agenda:', error);
+            return [];
+        }
+    }
+
+    saveAgenda() {
+        try {
+            if (window.firebaseService) {
+                window.firebaseService.saveAgenda(this.agenda);
+            }
+            localStorage.setItem('agenda', JSON.stringify(this.agenda));
+        } catch (error) {
+            console.error('Erro ao salvar agenda:', error);
+        }
     }
 }
 
@@ -1830,5 +2774,9 @@ window.projectManager = {
     toggleStepCompletion: (id) => projectManager.toggleStepCompletion(id),
     selectDate: (date) => projectManager.selectDate(date),
     toggleTaskCompletion: (id) => projectManager.toggleTaskCompletion(id),
-    removeTask: (id) => projectManager.removeTask(id)
+    removeTask: (id) => projectManager.removeTask(id),
+    toggleMeetingCompletion: (id) => projectManager.toggleMeetingCompletion(id),
+    removeMeeting: (id) => projectManager.removeMeeting(id),
+    toggleAgendaCompletion: (id) => projectManager.toggleAgendaCompletion(id),
+    removeAgendaItem: (id) => projectManager.removeAgendaItem(id)
 };
