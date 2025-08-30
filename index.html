@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão de Projetos</title>
-    <link rel="stylesheet" href="style(11).css">
-    <!-- Scripts -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CDN jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
-    <!-- Firebase Scripts -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
-        // Configuração do Firebase
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAFyfqpl4rNBE4gIXllX7W66f43RSMaDCg",
             authDomain: "gestaoprojetos-18968.firebaseapp.com",
@@ -24,128 +24,16 @@
             appId: "1:862351920002:web:97405d73b4804c2cb85d9b"
         };
         
-        // Inicializar Firebase
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // Serviço Firebase
-        window.firebaseService = {
-            // Projetos
-            async saveProjects(projects) {
-                try {
-                    await setDoc(doc(db, 'gestao', 'projects'), { data: projects });
-                    console.log('Projetos salvos no Firebase');
-                } catch (error) {
-                    console.error('Erro ao salvar projetos no Firebase:', error);
-                }
-            },
-            
-            async loadProjects() {
-                try {
-                    const docSnap = await getDoc(doc(db, 'gestao', 'projects'));
-                    if (docSnap.exists()) {
-                        return docSnap.data().data || [];
-                    }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao carregar projetos do Firebase:', error);
-                    return [];
-                }
-            },
-            
-            // Tarefas Diárias
-            async saveDailyTasks(tasks) {
-                try {
-                    await setDoc(doc(db, 'gestao', 'dailyTasks'), { data: tasks });
-                } catch (error) {
-                    console.error('Erro ao salvar tarefas diárias no Firebase:', error);
-                }
-            },
-            
-            async loadDailyTasks() {
-                try {
-                    const docSnap = await getDoc(doc(db, 'gestao', 'dailyTasks'));
-                    if (docSnap.exists()) {
-                        return docSnap.data().data || {};
-                    }
-                    return {};
-                } catch (error) {
-                    console.error('Erro ao carregar tarefas diárias do Firebase:', error);
-                    return {};
-                }
-            },
-            
-            // Ideias
-            async saveIdeas(ideas) {
-                try {
-                    await setDoc(doc(db, 'gestao', 'ideas'), { data: ideas });
-                } catch (error) {
-                    console.error('Erro ao salvar ideias no Firebase:', error);
-                }
-            },
-            
-            async loadIdeas() {
-                try {
-                    const docSnap = await getDoc(doc(db, 'gestao', 'ideas'));
-                    if (docSnap.exists()) {
-                        return docSnap.data().data || [];
-                    }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao carregar ideias do Firebase:', error);
-                    return [];
-                }
-            },
-            
-            // Reuniões
-            async saveMeetings(meetings) {
-                try {
-                    await setDoc(doc(db, 'gestao', 'meetings'), { data: meetings });
-                } catch (error) {
-                    console.error('Erro ao salvar reuniões no Firebase:', error);
-                }
-            },
-            
-            async loadMeetings() {
-                try {
-                    const docSnap = await getDoc(doc(db, 'gestao', 'meetings'));
-                    if (docSnap.exists()) {
-                        return docSnap.data().data || [];
-                    }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao carregar reuniões do Firebase:', error);
-                    return [];
-                }
-            },
-            
-            // Agenda
-            async saveAgenda(agenda) {
-                try {
-                    await setDoc(doc(db, 'gestao', 'agenda'), { data: agenda });
-                } catch (error) {
-                    console.error('Erro ao salvar agenda no Firebase:', error);
-                }
-            },
-            
-            async loadAgenda() {
-                try {
-                    const docSnap = await getDoc(doc(db, 'gestao', 'agenda'));
-                    if (docSnap.exists()) {
-                        return docSnap.data().data || [];
-                    }
-                    return [];
-                } catch (error) {
-                    console.error('Erro ao carregar agenda do Firebase:', error);
-                    return [];
-                }
-            }
-        };
-        
-        console.log('Firebase inicializado com sucesso');
+        // Make Firebase available globally
+        window.firebase = { db, collection, doc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, addDoc };
     </script>
     
-    <script src="app(9).js"></script>
+    <!-- SheetJS for Excel generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Navegação -->
@@ -382,20 +270,7 @@
         <section id="reunioes" class="section">
             <h1>Reuniões</h1>
             <div class="meetings-header">
-                <div class="add-meeting-section">
-                    <div class="add-meeting-form">
-                        <input type="text" id="newMeetingTitle" placeholder="Título da reunião..." class="meeting-input">
-                        <textarea id="newMeetingDescription" placeholder="Descrição da reunião..." class="meeting-textarea" rows="2"></textarea>
-                        <div class="meeting-form-row">
-                            <input type="datetime-local" id="newMeetingDate" class="meeting-date">
-                            <select id="newMeetingProject" class="meeting-project">
-                                <option value="">Projeto relacionado (opcional)</option>
-                            </select>
-                            <input type="text" id="newMeetingLocation" placeholder="Local/Link..." class="meeting-location">
-                        </div>
-                        <button class="btn btn-primary" id="addMeetingBtn">Agendar Reunião</button>
-                    </div>
-                </div>
+                <button class="btn btn-primary" id="adicionarReuniaoBtn">Agendar Reunião</button>
             </div>
             <div class="meetings-container" id="meetingsContainer">
                 <!-- Cards de reuniões serão inseridos aqui -->
@@ -406,57 +281,26 @@
         <section id="agenda" class="section">
             <h1>Minha Agenda</h1>
             <div class="agenda-header">
-                <div class="add-agenda-section">
-                    <div class="add-agenda-form">
-                        <input type="text" id="newAgendaTitle" placeholder="Título do compromisso..." class="agenda-input">
-                        <textarea id="newAgendaDescription" placeholder="Descrição..." class="agenda-textarea" rows="2"></textarea>
-                        <div class="agenda-form-row">
-                            <input type="datetime-local" id="newAgendaDate" class="agenda-date">
-                            <select id="newAgendaType" class="agenda-type">
-                                <option value="compromisso">Compromisso</option>
-                                <option value="reuniao">Reunião</option>
-                                <option value="projeto">Foco em Projeto</option>
-                                <option value="pessoal">Pessoal</option>
-                                <option value="outro">Outro</option>
-                            </select>
-                            <select id="newAgendaProject" class="agenda-project">
-                                <option value="">Projeto relacionado (opcional)</option>
-                            </select>
-                        </div>
-                        <div class="agenda-notification-row">
-                            <label>
-                                <input type="checkbox" id="agendaNotification" checked>
-                                Receber notificação
-                            </label>
-                            <select id="agendaNotificationTime" class="notification-time">
-                                <option value="5">5 minutos antes</option>
-                                <option value="15" selected>15 minutos antes</option>
-                                <option value="30">30 minutos antes</option>
-                                <option value="60">1 hora antes</option>
-                                <option value="1440">1 dia antes</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" id="addAgendaBtn">Adicionar à Agenda</button>
+                <div class="agenda-controls">
+                    <button class="btn btn-primary" id="adicionarCompromissoBtn">Novo Compromisso</button>
+                    <div class="agenda-filter">
+                        <label for="agendaFilter">Filtrar por:</label>
+                        <select id="agendaFilter" class="filter-select">
+                            <option value="todos">Todos</option>
+                            <option value="hoje">Hoje</option>
+                            <option value="semana">Esta Semana</option>
+                            <option value="mes">Este Mês</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            
-            <!-- Filtros da agenda -->
-            <div class="agenda-filters">
-                <select id="agendaFilter" class="filter-select">
-                    <option value="todos">Todos os compromissos</option>
-                    <option value="hoje">Hoje</option>
-                    <option value="semana">Esta semana</option>
-                    <option value="mes">Este mês</option>
-                    <option value="compromisso">Compromissos</option>
-                    <option value="reuniao">Reuniões</option>
-                    <option value="projeto">Projetos</option>
-                    <option value="pessoal">Pessoal</option>
-                </select>
-            </div>
-            
-            <div class="agenda-container" id="agendaContainer">
-                <!-- Cards de agenda serão inseridos aqui -->
+            <div class="agenda-container">
+                <div class="agenda-calendar" id="agendaCalendar">
+                    <!-- Mini calendário da agenda -->
+                </div>
+                <div class="agenda-events" id="agendaEvents">
+                    <!-- Lista de compromissos -->
+                </div>
             </div>
         </section>
 
@@ -562,23 +406,6 @@
         </section>
     </main>
 
-    <!-- Card de Notificação -->
-    <div id="notificationCard" class="notification-card hidden">
-        <div class="notification-content">
-            <div class="notification-header">
-                <h4 id="notificationTitle">Compromisso Próximo</h4>
-                <button class="notification-close" id="closeNotification">×</button>
-            </div>
-            <div class="notification-body">
-                <p id="notificationMessage"></p>
-                <div class="notification-actions">
-                    <button class="btn btn-sm btn-primary" id="markAsViewed">Marcar como Visto</button>
-                    <button class="btn btn-sm btn-secondary" id="snoozeNotification">Lembrar em 5 min</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Gerar PDF -->
     <div class="modal" id="pdfModal">
         <div class="modal-content">
@@ -606,37 +433,6 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelarPdf">Cancelar</button>
                 <button class="btn btn-primary" id="confirmarPdf">Gerar PDF</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Gerar Excel -->
-    <div class="modal" id="excelModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Gerar Excel</h3>
-                <span class="close" id="closeExcelModal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="excelOption" value="todos" checked>
-                        Todos os projetos
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="radio" name="excelOption" value="especifico">
-                        Projeto específico
-                    </label>
-                    <select id="projetoEspecificoExcel" disabled>
-                        <option value="">Selecione um projeto</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelarExcel">Cancelar</button>
-                <button class="btn btn-success" id="confirmarExcel">Gerar Excel</button>
             </div>
         </div>
     </div>
@@ -761,6 +557,172 @@
         </div>
     </div>
 
+    <!-- Modal Gerar Excel -->
+    <div class="modal" id="excelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Gerar Relatório Excel</h3>
+                <span class="close" id="closeExcelModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Selecione uma opção:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="excelOption" value="todos" checked>
+                            Todos os projetos
+                        </label>
+                        <label>
+                            <input type="radio" name="excelOption" value="especifico">
+                            Projeto específico
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="projetoEspecificoExcel">Projeto:</label>
+                    <select id="projetoEspecificoExcel" disabled>
+                        <option value="">Selecione um projeto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarExcel">Cancelar</button>
+                <button class="btn btn-success" id="confirmarExcel">Gerar Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agendar Reunião -->
+    <div class="modal" id="reuniaoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="reuniaoModalTitle">Agendar Reunião</h3>
+                <span class="close" id="closeReuniaoModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="reuniaoForm">
+                    <div class="form-group">
+                        <label for="reuniaoTitulo">Título *</label>
+                        <input type="text" id="reuniaoTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoDescricao">Descrição</label>
+                        <textarea id="reuniaoDescricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoData">Data *</label>
+                        <input type="datetime-local" id="reuniaoData" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoDuracao">Duração (minutos)</label>
+                        <input type="number" id="reuniaoDuracao" value="60" min="15" step="15">
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoParticipantes">Participantes</label>
+                        <textarea id="reuniaoParticipantes" rows="2" placeholder="Digite os nomes dos participantes, separados por vírgula"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoLink">Link da Reunião</label>
+                        <input type="url" id="reuniaoLink" placeholder="https://meet.google.com/...">
+                    </div>
+                    <div class="form-group">
+                        <label for="reuniaoProjeto">Projeto Relacionado</label>
+                        <select id="reuniaoProjeto">
+                            <option value="">Nenhum projeto específico</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarReuniao">Cancelar</button>
+                <button class="btn btn-primary" id="salvarReuniao">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Compromisso -->
+    <div class="modal" id="compromissoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="compromissoModalTitle">Novo Compromisso</h3>
+                <span class="close" id="closeCompromissoModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="compromissoForm">
+                    <div class="form-group">
+                        <label for="compromissoTitulo">Título *</label>
+                        <input type="text" id="compromissoTitulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="compromissoDescricao">Descrição</label>
+                        <textarea id="compromissoDescricao" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="compromissoData">Data e Hora *</label>
+                        <input type="datetime-local" id="compromissoData" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="compromissoTipo">Tipo</label>
+                        <select id="compromissoTipo">
+                            <option value="pessoal">Pessoal</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="reuniao">Reunião</option>
+                            <option value="projeto">Projeto</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="compromissoProjeto">Projeto Relacionado</label>
+                        <select id="compromissoProjeto">
+                            <option value="">Nenhum projeto específico</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notificações</label>
+                        <div class="notification-settings">
+                            <label>
+                                <input type="checkbox" id="notificarCompromisso" checked>
+                                Ativar notificações
+                            </label>
+                            <div class="notification-options" id="notificationOptions">
+                                <label for="antecedencia">Avisar com antecedência de:</label>
+                                <select id="antecedencia">
+                                    <option value="5">5 minutos</option>
+                                    <option value="15" selected>15 minutos</option>
+                                    <option value="30">30 minutos</option>
+                                    <option value="60">1 hora</option>
+                                    <option value="120">2 horas</option>
+                                    <option value="1440">1 dia</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelarCompromisso">Cancelar</button>
+                <button class="btn btn-primary" id="salvarCompromisso">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Notificação -->
+    <div class="notification-card" id="notificationCard">
+        <div class="notification-header">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-title" id="notificationTitle">Lembrete</span>
+            <button class="notification-close" id="closeNotification">&times;</button>
+        </div>
+        <div class="notification-body">
+            <div class="notification-message" id="notificationMessage"></div>
+            <div class="notification-time" id="notificationTime"></div>
+        </div>
+        <div class="notification-actions">
+            <button class="btn btn-sm btn-secondary" id="snoozeNotification">Adiar (5min)</button>
+            <button class="btn btn-sm btn-primary" id="markAsSeenNotification">Marcar como Visto</button>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <div class="toast-icon" id="toastIcon">✓</div>
@@ -771,6 +733,19 @@
         <button class="toast-close" id="toastClose">&times;</button>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF para geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
     <script src="app.js"></script>
 </body>
 </html>
