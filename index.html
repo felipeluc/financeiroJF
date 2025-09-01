@@ -40,16 +40,16 @@
     <nav class="sidebar" id="sidebar">
         <div class="nav-header">
             <h2>Gestão de Projetos</h2>
-            <button class="menu-toggle" id="menuToggle">☰</button>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
         <ul class="nav-menu">
-            <li><a href="#" data-section="dashboard" class="nav-link active">Dashboard</a></li>
-            <li><a href="#" data-section="acompanhar" class="nav-link">Acompanhar</a></li>
-            <li><a href="#" data-section="adicionar" class="nav-link">Adicionar Projeto</a></li>
-            <li><a href="#" data-section="ideias" class="nav-link">Ideias</a></li>
-            <li><a href="#" data-section="reunioes" class="nav-link">Reuniões</a></li>
-            <li><a href="#" data-section="agenda" class="nav-link">Minha Agenda</a></li>
-            <li><a href="#" data-section="calendario" class="nav-link">Calendário</a></li>
+            <li><a href="#" data-section="dashboard" class="nav-link active" data-tooltip="Visão geral dos projetos"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#" data-section="acompanhar" class="nav-link" data-tooltip="Acompanhar progresso"><i class="fas fa-eye"></i> Acompanhar</a></li>
+            <li><a href="#" data-section="adicionar" class="nav-link" data-tooltip="Criar novo projeto"><i class="fas fa-plus"></i> Adicionar Projeto</a></li>
+            <li><a href="#" data-section="ideias" class="nav-link" data-tooltip="Banco de ideias"><i class="fas fa-lightbulb"></i> Ideias</a></li>
+            <li><a href="#" data-section="reunioes" class="nav-link" data-tooltip="Gerenciar reuniões"><i class="fas fa-users"></i> Reuniões</a></li>
+            <li><a href="#" data-section="agenda" class="nav-link" data-tooltip="Agenda pessoal"><i class="fas fa-calendar-check"></i> Minha Agenda</a></li>
+            <li><a href="#" data-section="calendario" class="nav-link" data-tooltip="Visualização em calendário"><i class="fas fa-calendar"></i> Calendário</a></li>
         </ul>
     </nav>
 
@@ -89,8 +89,8 @@
             </div>
 
             <div class="pdf-section">
-                <button class="btn btn-primary" id="gerarPdfBtn">Gerar PDF</button>
-                <button class="btn btn-success" id="gerarExcelBtn">Gerar Excel</button>
+                <button class="btn btn-primary" id="gerarPdfBtn" data-tooltip="Exportar relatório em PDF"><i class="fas fa-file-pdf"></i> Gerar PDF</button>
+                <button class="btn btn-success" id="gerarExcelBtn" data-tooltip="Exportar dados para Excel"><i class="fas fa-file-excel"></i> Gerar Excel</button>
             </div>
         </section>
 
@@ -709,9 +709,9 @@
     <!-- Card de Notificação -->
     <div class="notification-card" id="notificationCard">
         <div class="notification-header">
-            <span class="notification-icon">🔔</span>
+            <span class="notification-icon"><i class="fas fa-bell"></i></span>
             <span class="notification-title" id="notificationTitle">Lembrete</span>
-            <button class="notification-close" id="closeNotification">&times;</button>
+            <button class="notification-close" id="closeNotification"><i class="fas fa-times"></i></button>
         </div>
         <div class="notification-body">
             <div class="notification-message" id="notificationMessage"></div>
@@ -725,14 +725,17 @@
 
     <!-- Toast Notification -->
     <div class="toast" id="toast">
-        <div class="toast-icon" id="toastIcon">✓</div>
+        <div class="toast-icon" id="toastIcon"><i class="fas fa-check"></i></div>
         <div class="toast-content">
             <div class="toast-title" id="toastTitle">Sucesso</div>
             <div class="toast-message" id="toastMessage">Operação realizada com sucesso!</div>
         </div>
-        <button class="toast-close" id="toastClose">&times;</button>
+        <button class="toast-close" id="toastClose"><i class="fas fa-times"></i></button>
     </div>
 
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
