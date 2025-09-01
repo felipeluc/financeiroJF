@@ -1362,7 +1362,12 @@ class ProjectManager {
         time.textContent = `Em ${appointment.antecedencia} minutos - ${new Date(appointment.dataHora).toLocaleString('pt-BR')}`;
         
         card.dataset.appointmentId = appointment.id;
-        card.classList.add('show');
+        card.style.display = 'block';
+        
+        // Pequeno delay para garantir que a animação funcione
+        setTimeout(() => {
+            card.classList.add('show');
+        }, 10);
         
         // Auto-hide após 30 segundos se não interagir
         setTimeout(() => {
@@ -1374,7 +1379,13 @@ class ProjectManager {
 
     hideNotification() {
         const card = document.getElementById('notificationCard');
-        if (card) card.classList.remove('show');
+        if (card) {
+            card.classList.remove('show');
+            // Garantir que o card seja completamente ocultado
+            setTimeout(() => {
+                card.style.display = 'none';
+            }, 300);
+        }
     }
 
     snoozeNotification() {
@@ -1570,22 +1581,22 @@ class ProjectManager {
         // Configurar conteúdo baseado no tipo
         const config = {
             success: {
-                icon: '✓',
+                icon: '<i class="fas fa-check"></i>',
                 title: title || 'Sucesso',
                 class: 'success'
             },
             error: {
-                icon: '✕',
+                icon: '<i class="fas fa-times"></i>',
                 title: title || 'Erro',
                 class: 'error'
             },
             warning: {
-                icon: '⚠',
+                icon: '<i class="fas fa-exclamation-triangle"></i>',
                 title: title || 'Atenção',
                 class: 'warning'
             },
             info: {
-                icon: 'ℹ',
+                icon: '<i class="fas fa-info-circle"></i>',
                 title: title || 'Informação',
                 class: 'info'
             }
@@ -1595,7 +1606,7 @@ class ProjectManager {
         
         // Aplicar configuração
         toast.classList.add(currentConfig.class);
-        toastIcon.textContent = currentConfig.icon;
+        toastIcon.innerHTML = currentConfig.icon;
         toastTitle.textContent = currentConfig.title;
         toastMessage.textContent = message;
         
