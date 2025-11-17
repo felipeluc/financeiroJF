@@ -1,76 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sistema Financeiro — SPA</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Financeiro</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- LOGIN (visível inicialmente) -->
-  <section id="login-section">
-    <div class="login-title">Entrar no Sistema</div>
-    <input id="email" class="input" type="email" placeholder="Email (ex: felipe@admin.com)" value="felipe@admin.com" />
-    <input id="password" class="input" type="password" placeholder="Senha" value="felipe15" />
-    <button id="login-btn" class="btn">Entrar</button>
-    <div id="login-error" class="error"></div>
+<div id="app-container">
+
+  <!-- LOGIN -->
+  <section id="login-screen" class="active-screen">
+    <h2>Entrar</h2>
+
+    <input id="login-user" placeholder="Usuário">
+    <input id="login-pass" placeholder="Senha" type="password">
+
+    <button class="primary" id="login-btn">Entrar</button>
+
+    <p id="login-error"></p>
   </section>
 
-  <!-- APP (oculto até login) -->
-  <div id="app" style="display:none;">
-    <div class="container">
+  <!-- HOME -->
+  <section id="home-screen" class="screen">
+    <header>Dashboard</header>
+    <div class="content"></div>
+  </section>
 
-      <!-- Menu -->
-      <div id="menu" role="navigation" aria-label="menu">
-        <div class="menu-item active" data-screen="home">Dashboard</div>
-        <div class="menu-item" data-screen="fixas">Contas Fixas</div>
-        <div class="menu-item" data-screen="variaveis">Contas Variáveis</div>
-        <div class="menu-item" data-screen="cartao">Cartão</div>
+  <!-- CONTAS FIXAS -->
+  <section id="contas-fixas-screen" class="screen">
+    <header>Contas Fixas</header>
+
+    <div class="content">
+      <div class="card">
+        <h3>Adicionar Conta Fixa</h3>
+        <input id="fixa-nome" placeholder="Nome da conta">
+        <input id="fixa-valor" placeholder="Valor (R$)" type="number">
+        <button class="primary" id="add-fixa">Adicionar</button>
       </div>
 
-      <!-- Sections -->
-      <div id="home" class="section visible">
-        <div class="card">
-          <h3>Resumo</h3>
-          <div>Total do mês: <strong id="totalMes">R$ 0,00</strong></div>
-          <div class="small" style="margin-top:8px">Soma: fixas + variáveis + cartão usado</div>
-        </div>
-      </div>
-
-      <div id="fixas" class="section">
-        <div class="card">
-          <h3>Adicionar Conta Fixa</h3>
-          <input id="fixaNome" class="input-inline" placeholder="Nome (ex: Água)" />
-          <input id="fixaValor" class="input-inline" placeholder="Valor (ex: 150.00)" type="number" step="0.01" />
-          <div style="margin-top:10px"><button id="addFixa" class="btn">Adicionar conta fixa</button></div>
-        </div>
-        <div id="listaFixas" class="card"></div>
-      </div>
-
-      <div id="variaveis" class="section">
-        <div class="card">
-          <h3>Adicionar Conta Variável</h3>
-          <input id="varNome" class="input-inline" placeholder="Descrição (ex: Mercado)" />
-          <input id="varValor" class="input-inline" placeholder="Valor (ex: 120.50)" type="number" step="0.01" />
-          <div style="margin-top:10px"><button id="addVariavel" class="btn">Adicionar conta variável</button></div>
-        </div>
-        <div id="listaVariaveis" class="card"></div>
-      </div>
-
-      <div id="cartao" class="section">
-        <div class="card">
-          <h3>Cartão de Crédito</h3>
-          <input id="cartaoLimite" class="input-inline" placeholder="Limite total (ex: 3000.00)" type="number" step="0.01" />
-          <input id="cartaoUsado" class="input-inline" placeholder="Usado neste mês (ex: 900.00)" type="number" step="0.01" />
-          <div style="margin-top:10px"><button id="salvarCartao" class="btn">Salvar cartão</button></div>
-        </div>
-      </div>
-
+      <h3>Lista</h3>
+      <div id="fixas-list"></div>
     </div>
-  </div>
+  </section>
 
-  <!-- App script (módulo) -->
-  <script type="module" src="app.js"></script>
+  <!-- CONTAS VARIÁVEIS -->
+  <section id="variaveis-screen" class="screen">
+    <header>Contas Variáveis</header>
+
+    <div class="content">
+      <div class="card">
+        <h3>Adicionar Conta</h3>
+        <input id="var-nome" placeholder="Descrição">
+        <input id="var-valor" placeholder="Valor (R$)" type="number">
+        <button class="primary" id="add-var">Adicionar</button>
+      </div>
+
+      <h3>Lista</h3>
+      <div id="var-list"></div>
+    </div>
+  </section>
+
+  <!-- CARTÃO DE CRÉDITO -->
+  <section id="cartao-screen" class="screen">
+    <header>Cartão de Crédito</header>
+
+    <div class="content">
+      <div class="card">
+        <h3>Configurar Cartão</h3>
+        <input id="cartao-limite" placeholder="Limite Total (R$)" type="number">
+        <input id="cartao-usado" placeholder="Valor Usado (R$)" type="number">
+        <button class="primary" id="salvar-cartao">Salvar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU FIXO -->
+  <nav id="menu">
+    <button data-target="home-screen" class="active">Home</button>
+    <button data-target="contas-fixas-screen">Fixas</button>
+    <button data-target="variaveis-screen">Variáveis</button>
+    <button data-target="cartao-screen">Cartão</button>
+  </nav>
+
+</div>
+
+<script type="module" src="firebase.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
