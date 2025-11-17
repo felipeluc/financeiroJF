@@ -1,39 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema Financeiro</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sistema Financeiro — SPA</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-  <div class="login-container">
-    <div class="login-box">
-      <h1 class="title">Acesso</h1>
 
-      <div class="input-group">
-        <svg width="20" height="20" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-3-3.87M4 21v-2a4 4 0 0 1 3-3.87M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"></path>
-        </svg>
-        <input type="text" id="username" placeholder="Usuário" />
+  <!-- LOGIN (visível inicialmente) -->
+  <section id="login-section">
+    <div class="login-title">Entrar no Sistema</div>
+    <input id="email" class="input" type="email" placeholder="Email (ex: felipe@admin.com)" value="felipe@admin.com" />
+    <input id="password" class="input" type="password" placeholder="Senha" value="felipe15" />
+    <button id="login-btn" class="btn">Entrar</button>
+    <div id="login-error" class="error"></div>
+  </section>
+
+  <!-- APP (oculto até login) -->
+  <div id="app" style="display:none;">
+    <div class="container">
+
+      <!-- Menu -->
+      <div id="menu" role="navigation" aria-label="menu">
+        <div class="menu-item active" data-screen="home">Dashboard</div>
+        <div class="menu-item" data-screen="fixas">Contas Fixas</div>
+        <div class="menu-item" data-screen="variaveis">Contas Variáveis</div>
+        <div class="menu-item" data-screen="cartao">Cartão</div>
       </div>
 
-      <div class="input-group">
-        <svg width="20" height="20" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 17a2 2 0 0 0 2-2V9a2 2 0 1 0-4 0v6a2 2 0 0 0 2 2Z"></path>
-          <rect x="4" y="7" width="16" height="13" rx="2"></rect>
-        </svg>
-        <input type="password" id="password" placeholder="Senha" />
+      <!-- Sections -->
+      <div id="home" class="section visible">
+        <div class="card">
+          <h3>Resumo</h3>
+          <div>Total do mês: <strong id="totalMes">R$ 0,00</strong></div>
+          <div class="small" style="margin-top:8px">Soma: fixas + variáveis + cartão usado</div>
+        </div>
       </div>
 
-      <button class="btn" onclick="login()">Entrar</button>
+      <div id="fixas" class="section">
+        <div class="card">
+          <h3>Adicionar Conta Fixa</h3>
+          <input id="fixaNome" class="input-inline" placeholder="Nome (ex: Água)" />
+          <input id="fixaValor" class="input-inline" placeholder="Valor (ex: 150.00)" type="number" step="0.01" />
+          <div style="margin-top:10px"><button id="addFixa" class="btn">Adicionar conta fixa</button></div>
+        </div>
+        <div id="listaFixas" class="card"></div>
+      </div>
 
-      <p id="error-msg"></p>
+      <div id="variaveis" class="section">
+        <div class="card">
+          <h3>Adicionar Conta Variável</h3>
+          <input id="varNome" class="input-inline" placeholder="Descrição (ex: Mercado)" />
+          <input id="varValor" class="input-inline" placeholder="Valor (ex: 120.50)" type="number" step="0.01" />
+          <div style="margin-top:10px"><button id="addVariavel" class="btn">Adicionar conta variável</button></div>
+        </div>
+        <div id="listaVariaveis" class="card"></div>
+      </div>
+
+      <div id="cartao" class="section">
+        <div class="card">
+          <h3>Cartão de Crédito</h3>
+          <input id="cartaoLimite" class="input-inline" placeholder="Limite total (ex: 3000.00)" type="number" step="0.01" />
+          <input id="cartaoUsado" class="input-inline" placeholder="Usado neste mês (ex: 900.00)" type="number" step="0.01" />
+          <div style="margin-top:10px"><button id="salvarCartao" class="btn">Salvar cartão</button></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <script src="firebase.js"></script>
-  <script src="login.js"></script>
+  <!-- App script (módulo) -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
