@@ -1,92 +1,39 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Financeiro</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Enxoval Felipe & João</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="app-container">
 
-  <!-- LOGIN -->
-  <section id="login-screen" class="active-screen">
-    <h2>Entrar</h2>
-
-    <input id="login-user" placeholder="Usuário">
-    <input id="login-pass" placeholder="Senha" type="password">
-
-    <button class="primary" id="login-btn">Entrar</button>
-
-    <p id="login-error"></p>
-  </section>
-
-  <!-- HOME -->
-  <section id="home-screen" class="screen">
-    <header>Dashboard</header>
-    <div class="content"></div>
-  </section>
-
-  <!-- CONTAS FIXAS -->
-  <section id="contas-fixas-screen" class="screen">
-    <header>Contas Fixas</header>
-
-    <div class="content">
-      <div class="card">
-        <h3>Adicionar Conta Fixa</h3>
-        <input id="fixa-nome" placeholder="Nome da conta">
-        <input id="fixa-valor" placeholder="Valor (R$)" type="number">
-        <button class="primary" id="add-fixa">Adicionar</button>
-      </div>
-
-      <h3>Lista</h3>
-      <div id="fixas-list"></div>
-    </div>
-  </section>
-
-  <!-- CONTAS VARIÁVEIS -->
-  <section id="variaveis-screen" class="screen">
-    <header>Contas Variáveis</header>
-
-    <div class="content">
-      <div class="card">
-        <h3>Adicionar Conta</h3>
-        <input id="var-nome" placeholder="Descrição">
-        <input id="var-valor" placeholder="Valor (R$)" type="number">
-        <button class="primary" id="add-var">Adicionar</button>
-      </div>
-
-      <h3>Lista</h3>
-      <div id="var-list"></div>
-    </div>
-  </section>
-
-  <!-- CARTÃO DE CRÉDITO -->
-  <section id="cartao-screen" class="screen">
-    <header>Cartão de Crédito</header>
-
-    <div class="content">
-      <div class="card">
-        <h3>Configurar Cartão</h3>
-        <input id="cartao-limite" placeholder="Limite Total (R$)" type="number">
-        <input id="cartao-usado" placeholder="Valor Usado (R$)" type="number">
-        <button class="primary" id="salvar-cartao">Salvar</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- MENU FIXO -->
-  <nav id="menu">
-    <button data-target="home-screen" class="active">Home</button>
-    <button data-target="contas-fixas-screen">Fixas</button>
-    <button data-target="variaveis-screen">Variáveis</button>
-    <button data-target="cartao-screen">Cartão</button>
-  </nav>
-
+<div id="login" class="card">
+<h1>🏡 Enxoval</h1>
+<select id="user">
+<option value="Felipe">Felipe</option>
+<option value="João">João</option>
+</select>
+<input type="password" id="password" placeholder="Senha" />
+<button onclick="login()">Entrar</button>
 </div>
 
-<script type="module" src="firebase.js"></script>
-<script type="module" src="app.js"></script>
+
+<div id="app" class="hidden">
+<header>
+<h2>Checklist do Enxoval</h2>
+<button onclick="addItem()">＋ Novo item</button>
+</header>
+
+
+<div id="menu"></div>
+</div>
+
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
