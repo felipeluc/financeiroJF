@@ -1,106 +1,69 @@
-import { db } from "./firebase.js";
-import {
-  collection,
-  addDoc,
-  setDoc,
-  doc,
-  getDoc,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-/* ---------------- LOGIN ---------------- */
-const loginBtn = document.getElementById("login-btn");
-const loginError = document.getElementById("login-error");
-
-const USERS = {
-  "felipe": "felipe15",
-  "admin": "1234"
+// Firebase config
+const firebaseConfig = {
+apiKey: "AIzaSyC39MUGnt8gBtK9GEmUdrlGNCe7R9rDq08",
+authDomain: "casajoaoefelipe.firebaseapp.com",
+projectId: "casajoaoefelipe",
+storageBucket: "casajoaoefelipe.firebasestorage.app",
+messagingSenderId: "1025146434390",
+appId: "1:1025146434390:web:19a9c92bed60d6a83cdcf7"
 };
 
-loginBtn.onclick = () => {
-  const user = document.getElementById("login-user").value;
-  const pass = document.getElementById("login-pass").value;
 
-  if (USERS[user] && USERS[user] === pass) {
-    localStorage.setItem("usuario", user);
-    openScreen("home-screen");
-  } else {
-    loginError.textContent = "Credenciais incorretas.";
-  }
-};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-/* ---------------- NAVEGAÇÃO ---------------- */
-const buttons = document.querySelectorAll("nav button");
 
-buttons.forEach(btn => {
-  btn.onclick = () => {
-    buttons.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    openScreen(btn.dataset.target);
-  };
+const PASSWORD = "1234";
+let currentUser = "";
+
+
+function login() {
+const pass = document.getElementById("password").value;
+currentUser = document.getElementById("user").value;
+
+
+if (pass !== PASSWORD) {
+alert("Senha incorreta");
+return;
+}
+
+
+document.getElementById("login").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+loadItems();
+}
+
+
+async function loadItems() {
+const menu = document.getElementById("menu");
+menu.innerHTML = "";
+
+
+const snapshot = await db.collection("enxoval").get();
+const categories = {};
+
+
+snapshot.forEach(doc => {
+const item = doc.data();
+if (!categories[item.categoria]) categories[item.categoria] = [];
+categories[item.categoria].push({ id: doc.id, ...item });
 });
 
-function openScreen(id) {
-  document.querySelectorAll(".screen, #login-screen")
-    .forEach(s => s.classList.remove("active-screen"));
 
-  document.getElementById(id).classList.add("active-screen");
+Object.keys(categories).forEach(cat => {
+const div = document.createElement("div");
+div.className = "category";
+div.innerHTML = `<h3>${cat}</h3>`;
+
+
+categories[cat]
+.sort((a, b) => b.comprado - a.comprado)
+.forEach(item => {
+const row = document.createElement("div");
+row.className = "item " + (item.comprado ? "checked" : "");
+row.innerHTML = `
+<div>
+<strong>${item.nome}</strong><br>
+${item.comprado ? `<small>R$ ${item.valor} • ${item.usuario}</small>` : ""}
+</div>
 }
-
-/* ---------------- CONTAS FIXAS ---------------- */
-document.getElementById("add-fixa").onclick = async () => {
-  const nome = document.getElementById("fixa-nome").value;
-  const valor = Number(document.getElementById("fixa-valor").value);
-
-  if (!nome || !valor) return;
-
-  await addDoc(collection(db, "contasFixas"), { nome, valor });
-
-  loadFixas();
-};
-
-async function loadFixas() {
-  const snap = await getDocs(collection(db, "contasFixas"));
-  const container = document.getElementById("fixas-list");
-  container.innerHTML = "";
-
-  snap.forEach(doc => {
-    const d = doc.data();
-    container.innerHTML += `<div class="card"><b>${d.nome}</b><br>R$ ${d.valor}</div>`;
-  });
-}
-
-/* ---------------- CONTAS VARIÁVEIS ---------------- */
-document.getElementById("add-var").onclick = async () => {
-  const nome = document.getElementById("var-nome").value;
-  const valor = Number(document.getElementById("var-valor").value);
-
-  if (!nome || !valor) return;
-
-  await addDoc(collection(db, "variaveis"), { nome, valor });
-
-  loadVariaveis();
-};
-
-async function loadVariaveis() {
-  const snap = await getDocs(collection(db, "variaveis"));
-  const container = document.getElementById("var-list");
-  container.innerHTML = "";
-
-  snap.forEach(doc => {
-    const d = doc.data();
-    container.innerHTML += `<div class="card"><b>${d.nome}</b><br>R$ ${d.valor}</div>`;
-  });
-}
-
-/* ---------------- CARTÃO ---------------- */
-document.getElementById("salvar-cartao").onclick = async () => {
-  const limite = Number(document.getElementById("cartao-limite").value);
-  const usado = Number(document.getElementById("cartao-usado").value);
-
-  await setDoc(doc(db, "cartao", "dados"), { limite, usado });
-};
-
-/* Auto-carregar dados ao abrir */
-loadFixas();
-loadVariaveis();
