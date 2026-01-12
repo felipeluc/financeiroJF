@@ -3,314 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enxoval Casa - Felipe & João</title>
-    
-    <!-- Firebase SDKs (Compat Version) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <style>
-        :root {
-            --ios-blue: #007AFF;
-            --ios-bg: #F2F2F7;
-            --ios-card: #FFFFFF;
-            --ios-text: #000000;
-            --ios-gray: #8E8E93;
-            --ios-separator: #C6C6C8;
-            --ios-green: #34C759;
-            --ios-red: #FF3B30;
-            --ios-modal-bg: rgba(0,0,0,0.4);
-            --ios-input-bg: #E9E9EB;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --ios-bg: #000000;
-                --ios-card: #1C1C1E;
-                --ios-text: #FFFFFF;
-                --ios-gray: #8E8E93;
-                --ios-separator: #38383A;
-                --ios-modal-bg: rgba(0,0,0,0.6);
-                --ios-input-bg: #2C2C2E;
-            }
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--ios-bg); color: var(--ios-text); line-height: 1.4; }
-        .hidden { display: none !important; }
-
-        /* Login */
-        #login-screen { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; background-color: var(--ios-bg); }
-        .login-container { width: 100%; max-width: 350px; text-align: center; }
-        .app-icon { font-size: 64px; margin-bottom: 10px; }
-        .user-selector { display: flex; gap: 10px; margin: 30px 0 20px; }
-        .user-btn { flex: 1; padding: 15px; border: 2px solid var(--ios-input-bg); background: var(--ios-input-bg); color: var(--ios-text); border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .user-btn.active { border-color: var(--ios-blue); background: rgba(0, 122, 255, 0.1); color: var(--ios-blue); }
-        input { width: 100%; padding: 15px; background: var(--ios-input-bg); color: var(--ios-text); border: none; border-radius: 12px; font-size: 16px; margin-bottom: 20px; outline: none; }
-        .primary-btn { width: 100%; padding: 16px; background: var(--ios-blue); color: white; border: none; border-radius: 12px; font-size: 17px; font-weight: 600; cursor: pointer; }
-
-        /* App Layout */
-        .app-header { background: var(--ios-card); position: sticky; top: 0; z-index: 100; padding: 15px 20px; border-bottom: 0.5px solid var(--ios-separator); }
-        .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 0 auto; }
-        .app-content { padding: 20px; max-width: 800px; margin: 0 auto; }
-        .summary-card { background: var(--ios-card); border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .total-value { font-size: 24px; font-weight: 700; color: var(--ios-blue); }
-        
-        /* Accordion */
-        .category-group { background: var(--ios-card); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-        .category-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 0.5px solid transparent; }
-        .category-group.open .category-header { border-bottom-color: var(--ios-separator); }
-        .category-items { display: none; }
-        .category-group.open .category-items { display: block; }
-
-        /* Items */
-        .item-row { padding: 14px 20px; display: flex; align-items: center; border-bottom: 0.5px solid var(--ios-separator); }
-        .item-row:last-child { border-bottom: none; }
-        .item-checkbox { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ios-separator); margin-right: 15px; cursor: pointer; flex-shrink: 0; }
-        .item-row.bought .item-checkbox { background: var(--ios-green); border-color: var(--ios-green); position: relative; }
-        .item-row.bought .item-checkbox::after { content: '✓'; color: white; position: absolute; left: 5px; top: 0px; font-size: 14px; }
-        .item-name { font-size: 16px; }
-        .item-row.bought .item-name { color: var(--ios-gray); text-decoration: line-through; }
-        .item-meta { font-size: 12px; color: var(--ios-gray); margin-top: 2px; }
-        .price-tag { color: var(--ios-green); font-weight: 600; }
-
-        /* Modals */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--ios-modal-bg); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: var(--ios-card); width: 100%; max-width: 400px; border-radius: 20px; padding: 20px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .add-btn-float { width: 50px; height: 50px; border-radius: 25px; background: var(--ios-blue); color: white; border: none; font-size: 30px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
-    </style>
+    <title>Enxoval Casa - João & Felipe</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs (Compat v9) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-
-    <!-- LOGIN -->
-    <div id="login-screen">
+    <!-- Tela de Login -->
+    <div id="login-screen" class="screen">
         <div class="login-container">
-            <div class="app-icon">🏠</div>
-            <h1>Nosso Enxoval</h1>
-            <p style="color: var(--ios-gray)">Selecione seu usuário</p>
-            <div class="user-selector">
-                <button class="user-btn" onclick="selectUser('Felipe', this)">Felipe</button>
-                <button class="user-btn" onclick="selectUser('João', this)">João</button>
+            <div class="ios-header">
+                <h1>Bem-vindo</h1>
+                <p>Organização de Enxoval</p>
             </div>
-            <input type="password" id="pass" placeholder="Senha (1234)">
-            <button class="primary-btn" onclick="handleLogin()">Entrar</button>
+            <div class="login-form">
+                <div class="input-group">
+                    <label for="user-select">Usuário</label>
+                    <select id="user-select">
+                        <option value="" disabled selected>Selecione seu nome</option>
+                        <option value="Felipe">Felipe</option>
+                        <option value="João">João</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" placeholder="Digite a senha">
+                </div>
+                <button id="login-btn" class="ios-btn primary">Entrar</button>
+            </div>
         </div>
     </div>
 
-    <!-- APP -->
-    <div id="app-screen" class="hidden">
+    <!-- Tela Principal (App) -->
+    <div id="app-screen" class="screen hidden">
         <header class="app-header">
             <div class="header-content">
-                <span id="user-tag" style="color: var(--ios-gray); font-size: 14px;"></span>
-                <h1 style="font-size: 17px;">Enxoval</h1>
-                <button onclick="location.reload()" style="background:none; border:none; color:var(--ios-blue); font-size:16px; cursor:pointer;">Sair</button>
+                <h1>Enxoval</h1>
+                <span id="current-user-display"></span>
             </div>
+            <button id="logout-btn" class="text-btn">Sair</button>
         </header>
 
         <main class="app-content">
-            <div class="summary-card">
-                <div>
-                    <p style="font-size: 12px; color: var(--ios-gray); text-transform: uppercase;">Total Gasto</p>
-                    <p id="total-spent" class="total-value">R$ 0,00</p>
-                </div>
-                <button class="add-btn-float" onclick="toggleModal('add-modal', true)">+</button>
+            <div id="categories-container">
+                <!-- Categorias e itens serão inseridos aqui via JS -->
+                <div class="loading">Carregando itens...</div>
             </div>
-            <div id="list-container"></div>
         </main>
+
+        <div class="fab-container">
+            <button id="open-modal-btn" class="fab">+</button>
+        </div>
     </div>
 
-    <!-- MODAL ADD -->
-    <div id="add-modal" class="modal hidden">
+    <!-- Modal Adicionar Item -->
+    <div id="item-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Novo Item</h2>
-                <button onclick="toggleModal('add-modal', false)" style="background:none; border:none; font-size:24px; color:var(--ios-gray); cursor:pointer;">&times;</button>
+                <button id="close-modal-btn" class="close-btn">&times;</button>
             </div>
-            <input type="text" id="new-item-name" placeholder="Nome do item">
-            <select id="new-item-cat" style="width:100%; padding:15px; border-radius:12px; background:var(--ios-input-bg); color:var(--ios-text); border:none; margin-bottom:20px;">
-                <option value="ITENS CAROS">ITENS CAROS</option>
-                <option value="COZINHA">COZINHA</option>
-                <option value="SALA DE ESTAR">SALA DE ESTAR</option>
-                <option value="SALA DE JANTAR">SALA DE JANTAR</option>
-                <option value="QUARTO">QUARTO</option>
-                <option value="BANHEIRO">BANHEIRO</option>
-                <option value="LAVANDEIRA / LIMPEZA">LAVANDEIRA / LIMPEZA</option>
-                <option value="FERRAMENTAS">FERRAMENTAS</option>
-            </select>
-            <button class="primary-btn" onclick="addItem()">Salvar</button>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="item-name">Nome do Item</label>
+                    <input type="text" id="item-name" placeholder="Ex: Jogo de Panelas">
+                </div>
+                <div class="input-group">
+                    <label for="item-category">Categoria</label>
+                    <select id="item-category">
+                        <option value="Cozinha">Cozinha</option>
+                        <option value="Quarto">Quarto</option>
+                        <option value="Banheiro">Banheiro</option>
+                        <option value="Sala">Sala</option>
+                        <option value="Lavanderia">Lavanderia</option>
+                        <option value="Decoração">Decoração</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <button id="save-item-btn" class="ios-btn primary">Salvar Item</button>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL PREÇO -->
-    <div id="price-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Confirmar Compra</h2>
-                <button onclick="toggleModal('price-modal', false)" style="background:none; border:none; font-size:24px; color:var(--ios-gray); cursor:pointer;">&times;</button>
-            </div>
-            <p id="price-item-name" style="margin-bottom:15px; font-weight:600;"></p>
-            <input type="number" id="price-input" placeholder="Valor pago (R$)">
-            <button class="primary-btn" onclick="confirmPurchase()">Confirmar</button>
-        </div>
-    </div>
-
-    <script>
-        // FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyC39MUGnt8gBtK9GEmUdrlGNCe7R9rDq08",
-            authDomain: "casajoaoefelipe.firebaseapp.com",
-            projectId: "casajoaoefelipe",
-            storageBucket: "casajoaoefelipe.firebasestorage.app",
-            messagingSenderId: "1025146434390",
-            appId: "1:1025146434390:web:19a9c92bed60d6a83cdcf7"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        let currentUser = "";
-        let allItems = [];
-        let activeItemId = null;
-
-        // LOGIN FUNCTIONS
-        function selectUser(user, btn) {
-            currentUser = user;
-            document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-
-        function handleLogin() {
-            const pass = document.getElementById('pass').value;
-            if (!currentUser) return alert("Selecione um usuário");
-            if (pass !== "1234") return alert("Senha incorreta");
-            
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.remove('hidden');
-            document.getElementById('user-tag').innerText = "Olá, " + currentUser;
-            loadData();
-        }
-
-        // DATA FUNCTIONS
-        function loadData() {
-            db.collection('enxoval').onSnapshot(snap => {
-                allItems = [];
-                snap.forEach(doc => allItems.push({id: doc.id, ...doc.data()}));
-                render();
-            });
-        }
-
-        function render() {
-            const cats = ["ITENS CAROS", "COZINHA", "SALA DE ESTAR", "SALA DE JANTAR", "QUARTO", "BANHEIRO", "LAVANDEIRA / LIMPEZA", "FERRAMENTAS"];
-            const container = document.getElementById('list-container');
-            container.innerHTML = "";
-            
-            let total = 0;
-
-            cats.forEach(cat => {
-                const items = allItems.filter(i => i.categoria === cat);
-                if (items.length === 0) return;
-
-                items.sort((a,b) => b.comprado - a.comprado);
-                
-                const boughtCount = items.filter(i => i.comprado).length;
-                const group = document.createElement('div');
-                group.className = 'category-group';
-                
-                let itemsHtml = items.map(item => {
-                    if(item.comprado) total += parseFloat(item.valor || 0);
-                    return `
-                        <div class="item-row ${item.comprado ? 'bought' : ''}">
-                            <div class="item-checkbox" onclick="handleCheck('${item.id}', ${item.comprado})"></div>
-                            <div style="flex:1">
-                                <div class="item-name">${item.nome}</div>
-                                ${item.comprado ? `<div class="item-meta">Por <b>${item.usuario}</b> • <span class="price-tag">R$ ${parseFloat(item.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-                group.innerHTML = `
-                    <div class="category-header" onclick="this.parentElement.classList.toggle('open')">
-                        <h2 style="font-size:16px">${cat}</h2>
-                        <span style="color:var(--ios-gray); font-size:14px">${boughtCount}/${items.length}</span>
-                    </div>
-                    <div class="category-items">${itemsHtml}</div>
-                `;
-                container.appendChild(group);
-            });
-
-            document.getElementById('total-spent').innerText = "R$ " + total.toLocaleString('pt-BR', {minimumFractionDigits:2});
-        }
-
-        function handleCheck(id, isBought) {
-            if (isBought) {
-                if(confirm("Desmarcar como comprado?")) {
-                    db.collection('enxoval').doc(id).update({ comprado: false, valor: 0, usuario: "" });
-                }
-            } else {
-                activeItemId = id;
-                const item = allItems.find(i => i.id === id);
-                document.getElementById('price-item-name').innerText = item.nome;
-                document.getElementById('price-input').value = "";
-                toggleModal('price-modal', true);
-            }
-        }
-
-        function confirmPurchase() {
-            const val = document.getElementById('price-input').value;
-            if(!val || val < 0) return alert("Insira um valor");
-            
-            db.collection('enxoval').doc(activeItemId).update({
-                comprado: true,
-                valor: parseFloat(val),
-                usuario: currentUser
-            });
-            toggleModal('price-modal', false);
-        }
-
-        function addItem() {
-            const nome = document.getElementById('new-item-name').value;
-            const cat = document.getElementById('new-item-cat').value;
-            if(!nome) return alert("Digite o nome");
-
-            db.collection('enxoval').add({
-                nome: nome,
-                categoria: cat,
-                comprado: false,
-                valor: 0,
-                usuario: ""
-            });
-            document.getElementById('new-item-name').value = "";
-            toggleModal('add-modal', false);
-        }
-
-        function toggleModal(id, show) {
-            document.getElementById(id).classList.toggle('hidden', !show);
-        }
-
-        // SEED DATA (First time only)
-        async function seed() {
-            const snap = await db.collection('enxoval').limit(1).get();
-            if (snap.empty) {
-                const initial = [
-                    { nome: "Geladeira", categoria: "ITENS CAROS" },
-                    { nome: "Maquina de lavar", categoria: "ITENS CAROS" },
-                    { nome: "Televisão 75 polegadas", categoria: "ITENS CAROS", comprado: true, valor: 3500, usuario: "Felipe" },
-                    { nome: "Forno eletrico bom", categoria: "ITENS CAROS" },
-                    { nome: "Microondas", categoria: "ITENS CAROS" },
-                    { nome: "Panificadora", categoria: "ITENS CAROS" },
-                    { nome: "Lava louça", categoria: "ITENS CAROS" },
-                    { nome: "Mesa e cadeiras", categoria: "ITENS CAROS" },
-                    { nome: "Sofá", categoria: "ITENS CAROS" },
-                    { nome: "Fogão indução", categoria: "ITENS CAROS" },
-                    { nome: "Panelas indução", categoria: "ITENS CAROS" },
-                    { nome: "Aparador sala", categoria: "ITENS CAROS" }
-                ];
-                for(let i of initial) await db.collection('enxoval').add({...i, comprado: i.comprado || false, valor: i.valor || 0, usuario: i.usuario || ""});
-            }
-        }
-        seed();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
