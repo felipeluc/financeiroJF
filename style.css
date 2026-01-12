@@ -1,108 +1,78 @@
-/* MOBILE APP STYLE */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, Arial, sans-serif;
-}
-
 body {
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+
+
+.hidden {
+display: none;
 }
 
-#app-container {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background: #111;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid #222;
-  border-right: 1px solid #222;
+
+.card {
+max-width: 360px;
+margin: auto;
+margin-top: 20vh;
+background: #fff;
+padding: 24px;
+border-radius: 20px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* Screens */
-.screen, #login-screen {
-  display: none;
-  flex-direction: column;
-  height: 100%;
+
+#login input, #login select, button {
+width: 100%;
+padding: 14px;
+margin-top: 12px;
+border-radius: 14px;
+border: none;
+font-size: 16px;
 }
 
-.active-screen {
-  display: flex !important;
+
+button {
+background: #007aff;
+color: #fff;
+font-weight: 600;
 }
+
 
 header {
-  padding: 18px;
-  text-align: center;
-  font-size: 20px;
-  background: #0d0d0d;
-  border-bottom: 1px solid #222;
+padding: 16px;
+display: flex;
+justify-content: space-between;
 }
 
-.content {
-  padding: 20px;
-  overflow-y: auto;
+
+.category {
+background: #fff;
+margin: 12px;
+padding: 14px;
+border-radius: 18px;
 }
 
-/* Cards */
-.card {
-  background: #1b1b1b;
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid #333;
-  margin-bottom: 18px;
+
+.category h3 {
+margin-top: 0;
 }
 
-.card h3 {
-  margin-bottom: 10px;
-  color: #fff;
+
+.item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 0;
+border-bottom: 1px solid #eee;
 }
 
-/* Inputs */
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  background: #111;
-  border: 1px solid #333;
-  border-radius: 12px;
-  color: #fff;
+
+.item:last-child {
+border-bottom: none;
 }
 
-/* Buttons */
-.primary {
-  width: 100%;
-  padding: 12px;
-  background: #2e2e2e;
-  border: none;
-  border-radius: 12px;
-  margin-top: 12px;
-  color: #fff;
-  font-size: 16px;
+
+.item.checked {
+opacity: 0.5;
 }
 
-/* Menu inferior */
-nav {
-  display: flex;
-  justify-content: space-around;
-  background: #0d0d0d;
-  padding: 12px;
-  border-top: 1px solid #222;
-}
 
-nav button {
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 15px;
-}
-
-nav button.active {
-  color: #fff;
-  font-weight: bold;
+.item small {
+color: #888;
 }
