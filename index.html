@@ -1,39 +1,110 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Enxoval Felipe & João</title>
-<link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enxoval Casa - Felipe & João</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+    <!-- Tela de Login -->
+    <div id="login-screen" class="screen">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="app-icon">🏠</div>
+                <h1>Nosso Enxoval</h1>
+                <p>Selecione seu usuário para entrar</p>
+            </div>
+            <div class="login-form">
+                <div class="user-selector">
+                    <button type="button" class="user-btn" data-user="Felipe">Felipe</button>
+                    <button type="button" class="user-btn" data-user="João">João</button>
+                </div>
+                <input type="password" id="password" placeholder="Senha (1234)" maxlength="4">
+                <button id="login-btn" class="primary-btn">Entrar</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Tela Principal do App -->
+    <div id="app-screen" class="screen hidden">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="user-info">
+                    <span id="current-user-display">Olá, Felipe</span>
+                </div>
+                <h1>Enxoval</h1>
+                <button id="logout-btn" class="text-btn">Sair</button>
+            </div>
+        </header>
 
-<div id="login" class="card">
-<h1>🏡 Enxoval</h1>
-<select id="user">
-<option value="Felipe">Felipe</option>
-<option value="João">João</option>
-</select>
-<input type="password" id="password" placeholder="Senha" />
-<button onclick="login()">Entrar</button>
-</div>
+        <main class="app-content">
+            <div class="summary-card">
+                <div class="summary-item">
+                    <span class="label">Total Comprado</span>
+                    <span id="total-spent" class="value">R$ 0,00</span>
+                </div>
+                <button id="open-add-modal" class="add-btn-circle">+</button>
+            </div>
 
+            <div id="categories-container" class="categories-list">
+                <!-- Categorias serão inseridas aqui via JS -->
+            </div>
+        </main>
+    </div>
 
-<div id="app" class="hidden">
-<header>
-<h2>Checklist do Enxoval</h2>
-<button onclick="addItem()">＋ Novo item</button>
-</header>
+    <!-- Modal Adicionar Item -->
+    <div id="add-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Novo Item</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="item-name">Nome do Item</label>
+                    <input type="text" id="item-name" placeholder="Ex: Geladeira">
+                </div>
+                <div class="form-group">
+                    <label for="item-category">Categoria</label>
+                    <select id="item-category">
+                        <option value="ITENS CAROS">ITENS CAROS</option>
+                        <option value="COZINHA">COZINHA</option>
+                        <option value="SALA DE ESTAR">SALA DE ESTAR</option>
+                        <option value="SALA DE JANTAR">SALA DE JANTAR</option>
+                        <option value="QUARTO">QUARTO</option>
+                        <option value="BANHEIRO">BANHEIRO</option>
+                        <option value="LAVANDEIRA / LIMPEZA">LAVANDEIRA / LIMPEZA</option>
+                        <option value="FERRAMENTAS">FERRAMENTAS</option>
+                    </select>
+                </div>
+                <button id="save-item-btn" class="primary-btn">Salvar Item</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Modal Valor Pago -->
+    <div id="price-modal" class="modal hidden">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Confirmar Compra</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="price-modal-item-name">Item</p>
+                <div class="form-group">
+                    <label for="item-price">Valor Pago (R$)</label>
+                    <input type="number" id="item-price" step="0.01" placeholder="0,00">
+                </div>
+                <button id="confirm-purchase-btn" class="primary-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
-<div id="menu"></div>
-</div>
-
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
