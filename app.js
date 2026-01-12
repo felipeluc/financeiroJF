@@ -17,202 +17,234 @@ let currentUser = null;
 let allItems = [];
 let itemToBuy = null;
 
-// Elementos do DOM
-const loginScreen = document.getElementById('login-screen');
-const appScreen = document.getElementById('app-screen');
-const userBtns = document.querySelectorAll('.user-btn');
-const passwordInput = document.getElementById('password');
-const loginBtn = document.getElementById('login-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const currentUserDisplay = document.getElementById('current-user-display');
-const categoriesContainer = document.getElementById('categories-container');
-const totalSpentDisplay = document.getElementById('total-spent');
+// Aguardar o DOM carregar completamente
+document.addEventListener('DOMContentLoaded', () => {
+    // Elementos do DOM
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const userBtns = document.querySelectorAll('.user-btn');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const currentUserDisplay = document.getElementById('current-user-display');
+    const categoriesContainer = document.getElementById('categories-container');
+    const totalSpentDisplay = document.getElementById('total-spent');
 
-// Modais
-const addModal = document.getElementById('add-modal');
-const priceModal = document.getElementById('price-modal');
-const openAddModalBtn = document.getElementById('open-add-modal');
-const closeModalBtns = document.querySelectorAll('.close-modal');
-const saveItemBtn = document.getElementById('save-item-btn');
-const confirmPurchaseBtn = document.getElementById('confirm-purchase-btn');
+    // Modais
+    const addModal = document.getElementById('add-modal');
+    const priceModal = document.getElementById('price-modal');
+    const openAddModalBtn = document.getElementById('open-add-modal');
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    const saveItemBtn = document.getElementById('save-item-btn');
+    const confirmPurchaseBtn = document.getElementById('confirm-purchase-btn');
 
-// --- LÓGICA DE LOGIN ---
+    // --- LÓGICA DE LOGIN ---
 
-userBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        userBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentUser = btn.dataset.user;
-    });
-});
-
-loginBtn.addEventListener('click', () => {
-    if (!currentUser) {
-        alert('Por favor, selecione um usuário.');
-        return;
-    }
-    if (passwordInput.value === '1234') {
-        showApp();
-    } else {
-        alert('Senha incorreta.');
-    }
-});
-
-function showApp() {
-    loginScreen.classList.add('hidden');
-    appScreen.classList.remove('hidden');
-    currentUserDisplay.textContent = `Olá, ${currentUser}`;
-    loadItems();
-}
-
-logoutBtn.addEventListener('click', () => {
-    appScreen.classList.add('hidden');
-    loginScreen.classList.remove('hidden');
-    passwordInput.value = '';
-});
-
-// --- LÓGICA DO FIRESTORE ---
-
-function loadItems() {
-    db.collection('enxoval').onSnapshot((snapshot) => {
-        allItems = [];
-        snapshot.forEach((doc) => {
-            allItems.push({ id: doc.id, ...doc.data() });
+    userBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            userBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentUser = btn.getAttribute('data-user');
+            console.log("Usuário selecionado:", currentUser);
         });
-        renderCategories();
-        calculateTotal();
     });
-}
 
-function renderCategories() {
-    const categories = [
-        "ITENS CAROS", "COZINHA", "SALA DE ESTAR", "SALA DE JANTAR", 
-        "QUARTO", "BANHEIRO", "LAVANDEIRA / LIMPEZA", "FERRAMENTAS"
-    ];
+    loginBtn.addEventListener('click', () => {
+        if (!currentUser) {
+            alert('Por favor, selecione um usuário (Felipe ou João).');
+            return;
+        }
+        if (passwordInput.value === '1234') {
+            showApp();
+        } else {
+            alert('Senha incorreta. Use 1234.');
+        }
+    });
 
-    categoriesContainer.innerHTML = '';
+    function showApp() {
+        loginScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+        currentUserDisplay.textContent = `Olá, ${currentUser}`;
+        loadItems();
+    }
 
-    categories.forEach(cat => {
-        const catItems = allItems.filter(item => item.categoria === cat);
-        
-        // Ordenar: comprados no topo
-        catItems.sort((a, b) => (b.comprado === a.comprado) ? 0 : b.comprado ? 1 : -1);
+    logoutBtn.addEventListener('click', () => {
+        appScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        passwordInput.value = '';
+        currentUser = null;
+        userBtns.forEach(b => b.classList.remove('active'));
+    });
 
-        const group = document.createElement('div');
-        group.className = 'category-group';
-        
-        const boughtCount = catItems.filter(i => i.comprado).length;
+    // --- LÓGICA DO FIRESTORE ---
 
-        group.innerHTML = `
-            <div class="category-header" onclick="this.parentElement.classList.toggle('open')">
-                <h2>${cat}</h2>
-                <span class="count">${boughtCount}/${catItems.length}</span>
-            </div>
-            <div class="category-items">
-                ${catItems.map(item => `
-                    <div class="item-row ${item.comprado ? 'bought' : ''}">
-                        <div class="item-checkbox" onclick="toggleItem('${item.id}', ${item.comprado})"></div>
-                        <div class="item-info">
-                            <div class="item-name">${item.nome}</div>
-                            ${item.comprado ? `
-                                <div class="item-meta">
-                                    Comprado por <span class="buyer">${item.usuario}</span> • 
-                                    <span class="item-price-tag">R$ ${parseFloat(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                                </div>
-                            ` : ''}
+    function loadItems() {
+        db.collection('enxoval').onSnapshot((snapshot) => {
+            allItems = [];
+            snapshot.forEach((doc) => {
+                allItems.push({ id: doc.id, ...doc.data() });
+            });
+            renderCategories();
+            calculateTotal();
+        }, (error) => {
+            console.error("Erro ao carregar itens:", error);
+        });
+    }
+
+    function renderCategories() {
+        const categories = [
+            "ITENS CAROS", "COZINHA", "SALA DE ESTAR", "SALA DE JANTAR", 
+            "QUARTO", "BANHEIRO", "LAVANDEIRA / LIMPEZA", "FERRAMENTAS"
+        ];
+
+        categoriesContainer.innerHTML = '';
+
+        categories.forEach(cat => {
+            const catItems = allItems.filter(item => item.categoria === cat);
+            if (catItems.length === 0) return; // Não mostrar categorias vazias
+
+            // Ordenar: comprados no topo
+            catItems.sort((a, b) => (b.comprado === a.comprado) ? 0 : b.comprado ? 1 : -1);
+
+            const group = document.createElement('div');
+            group.className = 'category-group';
+            
+            const boughtCount = catItems.filter(i => i.comprado).length;
+
+            group.innerHTML = `
+                <div class="category-header">
+                    <h2>${cat}</h2>
+                    <span class="count">${boughtCount}/${catItems.length}</span>
+                </div>
+                <div class="category-items">
+                    ${catItems.map(item => `
+                        <div class="item-row ${item.comprado ? 'bought' : ''}">
+                            <div class="item-checkbox" data-id="${item.id}" data-bought="${item.comprado}"></div>
+                            <div class="item-info">
+                                <div class="item-name">${item.nome}</div>
+                                ${item.comprado ? `
+                                    <div class="item-meta">
+                                        Comprado por <strong>${item.usuario}</strong> • 
+                                        <span class="item-price-tag">R$ ${parseFloat(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        categoriesContainer.appendChild(group);
+                    `).join('')}
+                </div>
+            `;
+
+            // Evento de expansão
+            group.querySelector('.category-header').addEventListener('click', () => {
+                group.classList.toggle('open');
+            });
+
+            // Eventos de checkbox
+            group.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const isBought = e.target.getAttribute('data-bought') === 'true';
+                    toggleItem(id, isBought);
+                });
+            });
+
+            categoriesContainer.appendChild(group);
+        });
+    }
+
+    function calculateTotal() {
+        const total = allItems.reduce((acc, item) => acc + (parseFloat(item.valor) || 0), 0);
+        totalSpentDisplay.textContent = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    }
+
+    // --- AÇÕES DE ITENS ---
+
+    async function toggleItem(id, isBought) {
+        if (isBought) {
+            if(confirm("Deseja desmarcar este item como comprado?")) {
+                await db.collection('enxoval').doc(id).update({
+                    comprado: false,
+                    valor: 0,
+                    usuario: ""
+                });
+            }
+        } else {
+            const item = allItems.find(i => i.id === id);
+            itemToBuy = item;
+            document.getElementById('price-modal-item-name').textContent = item.nome;
+            document.getElementById('item-price').value = '';
+            priceModal.classList.remove('hidden');
+        }
+    }
+
+    confirmPurchaseBtn.addEventListener('click', async () => {
+        const priceInput = document.getElementById('item-price');
+        const price = parseFloat(priceInput.value);
+        
+        if (isNaN(price) || price < 0) {
+            alert('Por favor, insira um valor válido.');
+            return;
+        }
+
+        try {
+            await db.collection('enxoval').doc(itemToBuy.id).update({
+                comprado: true,
+                valor: price,
+                usuario: currentUser
+            });
+            priceModal.classList.add('hidden');
+            itemToBuy = null;
+        } catch (error) {
+            alert("Erro ao salvar: " + error.message);
+        }
     });
-}
 
-function calculateTotal() {
-    const total = allItems.reduce((acc, item) => acc + (item.valor || 0), 0);
-    totalSpentDisplay.textContent = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-}
+    saveItemBtn.addEventListener('click', async () => {
+        const nomeInput = document.getElementById('item-name');
+        const categoriaInput = document.getElementById('item-category');
+        const nome = nomeInput.value.trim();
+        const categoria = categoriaInput.value;
 
-// --- AÇÕES DE ITENS ---
+        if (!nome) {
+            alert('Por favor, digite o nome do item.');
+            return;
+        }
 
-async function toggleItem(id, isBought) {
-    if (isBought) {
-        // Se já está comprado, desmarcar
-        if(confirm("Deseja desmarcar este item como comprado?")) {
-            await db.collection('enxoval').doc(id).update({
+        try {
+            await db.collection('enxoval').add({
+                nome: nome,
+                categoria: categoria,
                 comprado: false,
                 valor: 0,
                 usuario: ""
             });
+            nomeInput.value = '';
+            addModal.classList.add('hidden');
+        } catch (error) {
+            alert("Erro ao adicionar: " + error.message);
         }
-    } else {
-        // Se não está comprado, abrir modal de preço
-        const item = allItems.find(i => i.id === id);
-        itemToBuy = item;
-        document.getElementById('price-modal-item-name').textContent = item.nome;
-        document.getElementById('item-price').value = '';
-        priceModal.classList.remove('hidden');
-    }
-}
-
-confirmPurchaseBtn.addEventListener('click', async () => {
-    const price = parseFloat(document.getElementById('item-price').value);
-    if (isNaN(price) || price < 0) {
-        alert('Por favor, insira um valor válido.');
-        return;
-    }
-
-    await db.collection('enxoval').doc(itemToBuy.id).update({
-        comprado: true,
-        valor: price,
-        usuario: currentUser
     });
 
-    priceModal.classList.add('hidden');
-    itemToBuy = null;
-});
+    // --- MODAIS E UI ---
 
-saveItemBtn.addEventListener('click', async () => {
-    const nome = document.getElementById('item-name').value;
-    const categoria = document.getElementById('item-category').value;
+    openAddModalBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
 
-    if (!nome) {
-        alert('Por favor, digite o nome do item.');
-        return;
-    }
-
-    await db.collection('enxoval').add({
-        nome: nome,
-        categoria: categoria,
-        comprado: false,
-        valor: 0,
-        usuario: ""
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            addModal.classList.add('hidden');
+            priceModal.classList.add('hidden');
+        });
     });
 
-    document.getElementById('item-name').value = '';
-    addModal.classList.add('hidden');
+    window.onclick = (event) => {
+        if (event.target == addModal) addModal.classList.add('hidden');
+        if (event.target == priceModal) priceModal.classList.add('hidden');
+    };
+
+    // Popular banco se estiver vazio
+    seedDatabase();
 });
 
-// --- MODAIS E UI ---
-
-openAddModalBtn.addEventListener('click', () => addModal.classList.remove('hidden'));
-
-closeModalBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        addModal.classList.add('hidden');
-        priceModal.classList.add('hidden');
-    });
-});
-
-// Fechar modal ao clicar fora
-window.onclick = (event) => {
-    if (event.target == addModal) addModal.classList.add('hidden');
-    if (event.target == priceModal) priceModal.classList.add('hidden');
-};
-
-// --- POPULAR DADOS INICIAIS (Opcional/Primeira vez) ---
-// Esta função pode ser chamada uma vez no console para carregar a lista inicial do prompt
 async function seedDatabase() {
     const initialData = [
         { nome: "Geladeira", categoria: "ITENS CAROS" },
@@ -227,7 +259,6 @@ async function seedDatabase() {
         { nome: "Fogão indução", categoria: "ITENS CAROS" },
         { nome: "Panelas indução", categoria: "ITENS CAROS" },
         { nome: "Aparador sala", categoria: "ITENS CAROS" },
-        
         { nome: "Tábua de corte de vidro", categoria: "COZINHA" },
         { nome: "Jogo de facas com cepo", categoria: "COZINHA" },
         { nome: "Conjunto de talheres", categoria: "COZINHA" },
@@ -263,14 +294,12 @@ async function seedDatabase() {
         { nome: "Liquidificador", categoria: "COZINHA" },
         { nome: "Mixer", categoria: "COZINHA" },
         { nome: "Cafeteira", categoria: "COZINHA" },
-
         { nome: "Tapete", categoria: "SALA DE ESTAR" },
         { nome: "Almofadas", categoria: "SALA DE ESTAR" },
         { nome: "Cortinas", categoria: "SALA DE ESTAR" },
         { nome: "Luminárias", categoria: "SALA DE ESTAR" },
         { nome: "Porta-controle", categoria: "SALA DE ESTAR" },
         { nome: "Manta para sofá", categoria: "SALA DE ESTAR" },
-
         { nome: "Toalha de mesa", categoria: "SALA DE JANTAR" },
         { nome: "Jogo americano", categoria: "SALA DE JANTAR" },
         { nome: "Guardanapos de tecido", categoria: "SALA DE JANTAR" },
@@ -280,7 +309,6 @@ async function seedDatabase() {
         { nome: "Pratos de sobremesa", categoria: "SALA DE JANTAR" },
         { nome: "Travessas para servir", categoria: "SALA DE JANTAR" },
         { nome: "Jogo de jantar para ocasiões especiais", categoria: "SALA DE JANTAR" },
-
         { nome: "Jogo de lençóis (pelo menos 2)", categoria: "QUARTO" },
         { nome: "Espelho", categoria: "QUARTO" },
         { nome: "Abajur", categoria: "QUARTO" },
@@ -290,7 +318,6 @@ async function seedDatabase() {
         { nome: "Guarda-roupa", categoria: "QUARTO" },
         { nome: "Criado-mudo", categoria: "QUARTO" },
         { nome: "Edredom/cobertor", categoria: "QUARTO" },
-
         { nome: "Jogo de toalhas (banho, rosto e mão)", categoria: "BANHEIRO" },
         { nome: "Tapete", categoria: "BANHEIRO" },
         { nome: "Lixeira", categoria: "BANHEIRO" },
@@ -301,7 +328,6 @@ async function seedDatabase() {
         { nome: "Cesto para roupa suja", categoria: "BANHEIRO" },
         { nome: "Espelho", categoria: "BANHEIRO" },
         { nome: "Chuveiro", categoria: "BANHEIRO" },
-
         { nome: "Varal", categoria: "LAVANDEIRA / LIMPEZA" },
         { nome: "Tábua de passar", categoria: "LAVANDEIRA / LIMPEZA" },
         { nome: "Cesto para roupas", categoria: "LAVANDEIRA / LIMPEZA" },
@@ -319,7 +345,6 @@ async function seedDatabase() {
         { nome: "Escada pequena", categoria: "LAVANDEIRA / LIMPEZA" },
         { nome: "Organizador de produtos de limpeza", categoria: "LAVANDEIRA / LIMPEZA" },
         { nome: "Ferro de passar", categoria: "LAVANDEIRA / LIMPEZA" },
-
         { nome: "Kit de ferramentas básicas", categoria: "FERRAMENTAS" },
         { nome: "Extintor de incêndio", categoria: "FERRAMENTAS" },
         { nome: "Kit de primeiros socorros", categoria: "FERRAMENTAS" },
@@ -327,20 +352,18 @@ async function seedDatabase() {
         { nome: "Alarme/câmera de segurança", categoria: "FERRAMENTAS" }
     ];
 
-    // Para não duplicar, só rodar se estiver vazio
-    const snapshot = await db.collection('enxoval').get();
+    const snapshot = await firebase.firestore().collection('enxoval').get();
     if (snapshot.empty) {
+        console.log("Populando banco de dados pela primeira vez...");
         for (const item of initialData) {
-            await db.collection('enxoval').add({
-                comprado: false,
-                valor: 0,
-                usuario: "",
-                ...item
+            await firebase.firestore().collection('enxoval').add({
+                comprado: item.comprado || false,
+                valor: item.valor || 0,
+                usuario: item.usuario || "",
+                nome: item.nome,
+                categoria: item.categoria
             });
         }
-        console.log("Banco de dados populado!");
+        console.log("Banco de dados populado com sucesso!");
     }
 }
-
-// Descomente a linha abaixo se quiser que o sistema tente popular itens básicos na primeira execução
-seedDatabase();
