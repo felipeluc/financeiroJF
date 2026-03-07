@@ -10,7 +10,7 @@ const CONFIG = {
     // Credenciais de usuários
     users: {
         Felipe: { password: "Lucas1515" },
-        João: { password: "João123" }
+        João: { password: "Joao123" }
     },
 
     // Despesas compartilhadas (em parcelas) - VALORES CORRIGIDOS DA PLANILHA
@@ -18,7 +18,7 @@ const CONFIG = {
         {
             name: "Empréstimo 3 mil",
             monthlyValue: 374,
-            totalInstallments: 10,
+            totalInstallments: 9,
             startMonth: 3, // Março
             startYear: 2026,
             category: "Empréstimo",
