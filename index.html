@@ -99,7 +99,6 @@
             <!-- Overview Tab -->
             <div class="tab-content active" id="overviewTab">
                 <div class="section">
-                    <h2>Despesas do Mês</h2>
                     <div class="expenses-list" id="monthExpensesList">
                         <!-- Populated by JS -->
                     </div>
@@ -227,6 +226,23 @@
                     <button type="button" class="btn-secondary" id="cancelSalaryBtn">Cancelar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Installment Details Modal -->
+    <div id="installmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="installmentTitle">Detalhes da Parcela</h2>
+                <button class="btn-close" id="closeInstallmentModalBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="installmentDetails">
+                <!-- Populated by JS -->
+            </div>
         </div>
     </div>
 
