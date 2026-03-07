@@ -119,7 +119,8 @@ let appState = {
     salary: 0,
     customExpenses: [],
     recurringExpenses: {}, // Armazena valores de despesas recorrentes
-    editingExpenseId: null
+    editingExpenseId: null,
+    calendarFilters: {} // Armazena filtros selecionados do calendário
 };
 
 // ============================================
@@ -158,6 +159,13 @@ function setupEventListeners() {
     // Calendar
     document.getElementById('prevMonthBtn').addEventListener('click', previousMonth);
     document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
+    
+    // Calendar Filters
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('calendar-filter-checkbox')) {
+            updateCalendarSummary();
+        }
+    });
 
     // Expenses
     document.getElementById('addExpenseBtn').addEventListener('click', openAddExpenseModal);
@@ -625,32 +633,86 @@ function renderCalendar() {
 
 function updateCalendarSummary() {
     const expenses = getExpensesForMonth(appState.currentMonth, appState.currentYear);
-    const total = expenses.reduce((sum, exp) => sum + exp.value, 0);
+    
+    // Inicializar filtros se não existirem
+    if (Object.keys(appState.calendarFilters).length === 0) {
+        expenses.forEach(exp => {
+            const key = `${exp.name}_${exp.category}`;
+            appState.calendarFilters[key] = true;
+        });
+    }
 
-    document.getElementById('calendarTotal').textContent = formatCurrency(total);
-
-    // Agrupar por categoria
-    const byCategory = {};
+    // Agrupar por nome detalhado (não apenas categoria)
+    const byName = {};
     expenses.forEach(exp => {
-        const category = exp.category || 'Outro';
-        if (!byCategory[category]) {
-            byCategory[category] = 0;
+        const key = `${exp.name}_${exp.category}`;
+        if (!byName[key]) {
+            byName[key] = {
+                name: exp.name,
+                category: exp.category,
+                value: 0,
+                isChecked: appState.calendarFilters[key] !== false
+            };
         }
-        byCategory[category] += exp.value;
+        byName[key].value += exp.value;
     });
+
+    // Calcular total filtrado
+    let filteredTotal = 0;
+    Object.values(byName).forEach(data => {
+        if (data.isChecked) {
+            filteredTotal += data.value;
+        }
+    });
+
+    document.getElementById('calendarTotal').textContent = formatCurrency(filteredTotal);
 
     const detailsContainer = document.getElementById('calendarDetails');
     detailsContainer.innerHTML = '';
 
-    Object.entries(byCategory).forEach(([category, value]) => {
-        const item = document.createElement('div');
-        item.className = 'summary-detail-item';
-        item.innerHTML = `
-            <span class="summary-detail-name">${category}</span>
-            <span class="summary-detail-value">${formatCurrency(value)}</span>
+    // Criar seção de filtros
+    const filterSection = document.createElement('div');
+    filterSection.className = 'calendar-filters-section';
+    filterSection.innerHTML = '<div class="filter-header">Filtrar por item:</div>';
+    
+    const filtersList = document.createElement('div');
+    filtersList.className = 'calendar-filters-list';
+
+    Object.entries(byName).forEach(([key, data]) => {
+        const filterItem = document.createElement('div');
+        filterItem.className = 'calendar-filter-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'calendar-filter-checkbox';
+        checkbox.id = `filter_${key}`;
+        checkbox.checked = data.isChecked;
+        checkbox.dataset.filterKey = key;
+        checkbox.addEventListener('change', (e) => {
+            appState.calendarFilters[key] = e.target.checked;
+            updateCalendarSummary();
+        });
+        
+        const label = document.createElement('label');
+        label.htmlFor = `filter_${key}`;
+        label.className = 'calendar-filter-label';
+        label.innerHTML = `
+            <span class="filter-name">${data.name}</span>
+            <span class="filter-category">${data.category}</span>
         `;
-        detailsContainer.appendChild(item);
+        
+        const value = document.createElement('span');
+        value.className = 'filter-value';
+        value.textContent = formatCurrency(data.value);
+        
+        filterItem.appendChild(checkbox);
+        filterItem.appendChild(label);
+        filterItem.appendChild(value);
+        filtersList.appendChild(filterItem);
     });
+
+    filterSection.appendChild(filtersList);
+    detailsContainer.appendChild(filterSection);
 }
 
 function previousMonth() {
