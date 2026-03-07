@@ -1105,3 +1105,78 @@ body {
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
 }
+
+
+/* ============================================
+   CALENDAR FILTERS
+   ============================================ */
+
+.calendar-filters-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--divider);
+}
+
+.filter-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.calendar-filters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.calendar-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--radius);
+    background: rgba(0, 122, 255, 0.02);
+    transition: all 0.3s ease;
+}
+
+.calendar-filter-item:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+.calendar-filter-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+.calendar-filter-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.filter-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.filter-category {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.filter-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
