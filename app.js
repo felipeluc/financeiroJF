@@ -20,7 +20,7 @@ const CONFIG = {
             monthlyValue: 374,
             totalInstallments: 10,
             startMonth: 3, // Março
-            startYear: 2025,
+            startYear: 2026,
             category: "Empréstimo",
             installmentValue: 187 // Valor por pessoa
         },
@@ -29,7 +29,7 @@ const CONFIG = {
             monthlyValue: 778,
             totalInstallments: 10,
             startMonth: 2, // Fevereiro
-            startYear: 2025,
+            startYear: 2026,
             category: "Eletrônicos",
             installmentValue: 389 // Valor por pessoa
         },
@@ -38,7 +38,7 @@ const CONFIG = {
             monthlyValue: 813,
             totalInstallments: 18,
             startMonth: 4, // Abril
-            startYear: 2025,
+            startYear: 2026,
             category: "Empréstimo",
             installmentValue: 406.5 // Valor por pessoa
         },
@@ -47,7 +47,7 @@ const CONFIG = {
             monthlyValue: 1280,
             totalInstallments: 420,
             startMonth: 4, // Abril
-            startYear: 2025,
+            startYear: 2026,
             category: "Moradia",
             installmentValue: 640 // Valor por pessoa
         },
@@ -56,7 +56,7 @@ const CONFIG = {
             monthlyValue: 104,
             totalInstallments: 12,
             startMonth: 4, // Abril
-            startYear: 2025,
+            startYear: 2026,
             category: "Seguro",
             installmentValue: 52 // Valor por pessoa
         }
@@ -85,7 +85,7 @@ const CONFIG = {
             monthlyValue: 37.77,
             totalInstallments: 18,
             startMonth: 1, // Janeiro
-            startYear: 2025,
+            startYear: 2026,
             category: "Eletrônicos"
         },
         {
@@ -93,7 +93,7 @@ const CONFIG = {
             monthlyValue: 72.23,
             totalInstallments: 10,
             startMonth: 3, // Março
-            startYear: 2025,
+            startYear: 2026,
             category: "Eletrônicos"
         }
     ],
