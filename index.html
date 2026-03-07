@@ -1,91 +1,235 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enxoval Casa - João & Felipe</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDKs (Compat v9) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financeiro Pessoal</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Tela de Login -->
-    <div id="login-screen" class="screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
         <div class="login-container">
-            <div class="ios-header">
-                <h1>Bem-vindo</h1>
-                <p>Organização de Enxoval</p>
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2"/>
+                        <path d="M24 14V34M14 24H34" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h1>Financeiro</h1>
+                <p>Gerencie suas finanças</p>
             </div>
-            <div class="login-form">
-                <div class="input-group">
-                    <label for="user-select">Usuário</label>
-                    <select id="user-select">
-                        <option value="" disabled selected>Selecione seu nome</option>
-                        <option value="Felipe">Felipe</option>
-                        <option value="João">João</option>
-                    </select>
+
+            <div class="user-selector">
+                <label>Selecione o usuário:</label>
+                <div class="user-buttons">
+                    <button class="user-btn" data-user="Felipe">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                            <path d="M4 20C4 16.134 7.582 13 12 13C16.418 13 20 16.134 20 20" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Felipe
+                    </button>
+                    <button class="user-btn" data-user="João">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                            <path d="M4 20C4 16.134 7.582 13 12 13C16.418 13 20 16.134 20 20" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        João
+                    </button>
                 </div>
-                <div class="input-group">
-                    <label for="password">Senha</label>
-                    <input type="password" id="password" placeholder="Digite a senha">
-                </div>
-                <button id="login-btn" class="ios-btn primary">Entrar</button>
+            </div>
+
+            <div class="password-form" id="passwordForm" style="display: none;">
+                <input type="password" id="passwordInput" placeholder="Digite sua senha" autocomplete="off">
+                <button class="btn-primary" id="loginBtn">Entrar</button>
+                <button class="btn-secondary" id="backBtn">Voltar</button>
             </div>
         </div>
     </div>
 
-    <!-- Tela Principal (App) -->
-    <div id="app-screen" class="screen hidden">
-        <header class="app-header">
-            <div class="header-content">
-                <h1>Enxoval</h1>
-                <span id="current-user-display"></span>
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+        <div class="dashboard-container">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div class="header-top">
+                    <h1 id="userName">Dashboard</h1>
+                    <button class="btn-logout" id="logoutBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 3H5C3.895 3 3 3.895 3 5V19C3 20.105 3.895 21 5 21H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="header-date" id="currentDate"></p>
             </div>
-            <button id="logout-btn" class="text-btn">Sair</button>
-        </header>
 
-        <main class="app-content">
-            <div id="categories-container">
-                <!-- Categorias e itens serão inseridos aqui via JS -->
-                <div class="loading">Carregando itens...</div>
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card glass-card">
+                    <div class="card-label">Salário</div>
+                    <div class="card-value" id="salaryValue">R$ 0,00</div>
+                    <button class="btn-edit" id="editSalaryBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 17.25V21h3.75L17.81 9.94M20.71 7.04C20.99 6.76 20.99 6.31 20.71 6.03L18.97 4.29C18.69 4.01 18.24 4.01 17.96 4.29L16.5 5.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="card glass-card">
+                    <div class="card-label">Despesas do Mês</div>
+                    <div class="card-value negative" id="expensesValue">R$ 0,00</div>
+                </div>
+
+                <div class="card glass-card highlight">
+                    <div class="card-label">Saldo</div>
+                    <div class="card-value" id="balanceValue">R$ 0,00</div>
+                </div>
             </div>
-        </main>
 
-        <div class="fab-container">
-            <button id="open-modal-btn" class="fab">+</button>
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="overview">Visão Geral</button>
+                <button class="tab-btn" data-tab="calendar">Calendário</button>
+                <button class="tab-btn" data-tab="expenses">Despesas</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overviewTab">
+                <div class="section">
+                    <h2>Despesas do Mês</h2>
+                    <div class="expenses-list" id="monthExpensesList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Tab -->
+            <div class="tab-content" id="calendarTab">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="btn-nav" id="prevMonthBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <h2 id="calendarMonth">Março 2025</h2>
+                        <button class="btn-nav" id="nextMonthBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="calendar-summary">
+                        <h3>Total do Mês</h3>
+                        <div class="summary-value" id="calendarTotal">R$ 0,00</div>
+                        <div class="summary-details" id="calendarDetails">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Tab -->
+            <div class="tab-content" id="expensesTab">
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Minhas Despesas</h2>
+                        <button class="btn-add" id="addExpenseBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="expenses-full-list" id="allExpensesList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Adicionar Item -->
-    <div id="item-modal" class="modal hidden">
+    <!-- Add/Edit Expense Modal -->
+    <div id="expenseModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Novo Item</h2>
-                <button id="close-modal-btn" class="close-btn">&times;</button>
+                <h2 id="modalTitle">Adicionar Despesa</h2>
+                <button class="btn-close" id="closeModalBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
             </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label for="item-name">Nome do Item</label>
-                    <input type="text" id="item-name" placeholder="Ex: Jogo de Panelas">
+
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label for="expenseName">Nome da Despesa</label>
+                    <input type="text" id="expenseName" required>
                 </div>
-                <div class="input-group">
-                    <label for="item-category">Categoria</label>
-                    <select id="item-category">
-                        <option value="Cozinha">Cozinha</option>
-                        <option value="Quarto">Quarto</option>
-                        <option value="Banheiro">Banheiro</option>
-                        <option value="Sala">Sala</option>
-                        <option value="Lavanderia">Lavanderia</option>
-                        <option value="Decoração">Decoração</option>
-                        <option value="Outros">Outros</option>
+
+                <div class="form-group">
+                    <label for="expenseValue">Valor</label>
+                    <input type="number" id="expenseValue" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseDate">Data</label>
+                    <input type="date" id="expenseDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseCategory">Categoria</label>
+                    <select id="expenseCategory">
+                        <option value="Fatura">Fatura</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Outro">Outro</option>
                     </select>
                 </div>
-                <button id="save-item-btn" class="ios-btn primary">Salvar Item</button>
-            </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Edit Salary Modal -->
+    <div id="salaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Salário</h2>
+                <button class="btn-close" id="closeSalaryModalBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="salaryForm">
+                <div class="form-group">
+                    <label for="salaryInput">Valor do Salário</label>
+                    <input type="number" id="salaryInput" step="0.01" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" class="btn-secondary" id="cancelSalaryBtn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
