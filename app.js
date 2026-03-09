@@ -35,12 +35,12 @@ const CONFIG = {
         },
         {
             name: "Empréstimo 10.800",
-            monthlyValue: 813,
-            totalInstallments: 18,
+            monthlyValue: 805,
+            totalInstallments: 19,
             startMonth: 4, // Abril
             startYear: 2026,
             category: "Empréstimo",
-            installmentValue: 406.5 // Valor por pessoa
+            installmentValue: 402.5 // Valor por pessoa
         },
         {
             name: "Financiamento da casa",
@@ -95,6 +95,22 @@ const CONFIG = {
             startMonth: 3, // Março
             startYear: 2026,
             category: "Eletrônicos"
+        },
+        {
+            name: "Conta Internet",
+            monthlyValue: 40.00,
+            totalInstallments: 36,
+            startMonth: 1, // Janeiro
+            startYear: 2026,
+            category: "Contas"
+        },
+        {
+            name: "Conta Apple",
+            monthlyValue: 6.00,
+            totalInstallments: 36,
+            startMonth: 1, // Janeiro
+            startYear: 2026,
+            category: "Contas"
         }
     ],
 
