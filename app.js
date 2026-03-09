@@ -98,7 +98,7 @@ const CONFIG = {
         },
         {
             name: "Conta Internet",
-            monthlyValue: 40.00,
+            monthlyValue: 43.00,
             totalInstallments: 36,
             startMonth: 1, // Janeiro
             startYear: 2026,
